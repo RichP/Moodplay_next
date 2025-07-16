@@ -1,6 +1,5 @@
-export const dynamic = 'force-dynamic';
 "use server";
-
+export const dynamic = 'force-dynamic';
 import { notFound } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
