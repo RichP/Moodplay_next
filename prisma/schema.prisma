@@ -1,0 +1,91 @@
+model BlogPost {
+  id        Int        @id @default(autoincrement())
+  title     String
+  slug      String     @unique
+  date      DateTime
+  excerpt   String
+  image     String?
+  content   String
+  createdAt DateTime   @default(now())
+  blogTags      BlogPostToBlogTag[]
+
+  @@map("blogpost")
+  
+}
+
+model Mood {
+  id    Int      @id @default(autoincrement())
+  mood  String
+  tags  Tag[]
+
+  @@map("mood")
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  value     String
+  moodId    Int
+  mood      Mood     @relation(fields: [moodId], references: [id])
+
+  @@map("tag")
+}
+
+model BlogTag {
+  id        Int         @id @default(autoincrement())
+  value     String      @unique
+  blogPosts BlogPostToBlogTag[]
+
+  @@map("blogtag")
+}
+
+model BlogPostToBlogTag {
+  A        Int
+  B        Int
+
+  blogPost BlogPost @relation(fields: [A], references: [id])
+  blogTag  BlogTag  @relation(fields: [B], references: [id])
+
+  @@id([A, B])
+  @@map("_blogposttoblogtag")
+}
+
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Game {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  mood        String
+  image       String?
+  steamUrl    String?
+  popularity  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("game")
+}
+
+model SuggestedGame {
+  id        Int      @id @default(autoincrement())
+  name      String
+  mood      String
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@map("suggestedgame")
+}

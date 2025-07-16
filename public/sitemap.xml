@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://moodplay.app/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://moodplay.app/about</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://moodplay.app/contact</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://moodplay.app/suggest</loc>
+    <priority>0.7</priority>
+  </url>
+  <!-- Add more URLs as needed -->
+</urlset>
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="manifest" href="/manifest.webmanifest" />

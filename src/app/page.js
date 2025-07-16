@@ -1,103 +1,172 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import MoodSelector from '../components/MoodSelector';
+import SearchBarComponent from '../components/SearchBarComponent';
+import SortDropdown from '../components/SortDropdown';
+import CardComponent from '../components/CardComponent';
+// import GameModal from '../components/GameModal';
+import Link from 'next/link';
+import Head from 'next/head';
+import { useState, useEffect } from 'react';
+// ...existing code...
+
+export default function HomePage() {
+  const [selectedMood, setSelectedMood] = useState('Relaxed');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('popularity');
+  // const [modalOpen, setModalOpen] = useState(false);
+  // const [modalGame, setModalGame] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState([]);
+  const [moods, setMoods] = useState([]);
+
+  useEffect(() => {
+    // Fetch moods from API
+    const fetchMoods = async () => {
+      try {
+        const res = await fetch('/api/moods');
+        const data = await res.json();
+        setMoods(data);
+      } catch (err) {
+        setMoods([]);
+      }
+    };
+    fetchMoods();
+  }, []);
+
+  useEffect(() => {
+    // Fetch games from API
+    const fetchGames = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/games?selectedMood=${encodeURIComponent(selectedMood)}`);
+        const data = await res.json();
+        setGames(data);
+      } catch (err) {
+        setGames([]);
+      }
+      setLoading(false);
+    };
+    fetchGames();
+  }, [selectedMood, searchTerm, sortOption]);
+
+  const filteredAndSortedGames = games
+    .filter((game) =>
+      game.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortOption === 'popularity') {
+        return b.popularity - a.popularity;
+      } else if (sortOption === 'alphabetical') {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+
+  // const handleOpenModal = (game) => {
+  //   setModalGame(game);
+  //   setModalOpen(true);
+  // };
+
+  // const handleCloseModal = () => {
+  //   setModalOpen(false);
+  //   setModalGame(null);
+  // };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <>
+      <Head>
+        <title>MoodPlay – {selectedMood} Steam Games</title>
+        <meta
+          name="description"
+          content={`Find Steam games for your "${selectedMood}" mood.`}
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <meta property="og:title" content={`MoodPlay – ${selectedMood} Steam Games`} />
+        <meta
+          property="og:description"
+          content={`Discover Steam games for your "${selectedMood}" mood.`}
+        />
+      </Head>
+  <main className="min-h-screen">
+        {/* MoodSelector always full width */}
+        <div className="w-full max-w-5xl mx-auto px-4 mb-4">
+          <MoodSelector
+            moods={moods}
+            selectedMood={selectedMood}
+            setSelectedMood={setSelectedMood}
+          />
+          <SearchBarComponent
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
+          <SortDropdown
+            sortOption={sortOption}
+            setSortOption={setSortOption}
+          />
         </div>
+        <section>
+          <h2 className="text-xl font-semibold mb-4 text-center text-indigo-500">
+            Games for "
+            <span aria-label={`${selectedMood} mood`}>{selectedMood}</span>" Mood
+          </h2>
+
+          <div
+  className="w-full grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 min-h-[650px] transition-opacity duration-500 overflow-y-scroll"
+>
+
+            {(() => {
+              const MIN_ITEMS = 4;
+              if (loading) {
+                // Render skeletons matching CardComponent layout
+                return Array.from({ length: MIN_ITEMS }).map((_, idx) => (
+                  <article
+  key={`skeleton-${idx}`}
+  className="group bg-white rounded-xl shadow hover:shadow-lg transform transition duration-300 overflow-hidden flex flex-col border border-slate-200 animate-fade-in"
+>
+
+                    <div className="w-full h-48 bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex flex-col flex-1 p-4">
+                      <div className="h-6 w-3/4 bg-gray-300 dark:bg-gray-600 rounded mb-2" />
+                      <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-4" />
+                      <div className="flex gap-2 mt-auto">
+                        <div className="inline-block h-10 w-24 bg-slate-200 rounded" />
+                        <div className="inline-block h-10 w-24 bg-indigo-300 rounded" />
+                      </div>
+                    </div>
+                  </article>
+                ));
+              } else if (filteredAndSortedGames.length === 0) {
+                return (
+                  <div className="col-span-full flex items-center justify-center min-h-[200px]">
+                    <p className="text-lg text-gray-400 text-center">
+                      No games found for this mood—try another!
+                    </p>
+                  </div>
+                );
+              } else {
+                const cards = filteredAndSortedGames.map((game) => (
+                  <CardComponent key={game.id || game.slug} game={game} />
+                ));
+                // Pad with invisible placeholders if less than MIN_ITEMS
+                const placeholders = [];
+                for (let i = cards.length; i < MIN_ITEMS; i++) {
+                  placeholders.push(
+                    <div
+                      key={`placeholder-${i}`}
+                      className="h-64 w-full invisible"
+                      aria-hidden="true"
+                    />
+                  );
+                }
+                return [...cards, ...placeholders];
+              }
+            })()}
+          </div>
+        </section>
+  {/* Modal removed, now using game pages for SEO */}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    </>
   );
 }
+
+// ...existing code...
