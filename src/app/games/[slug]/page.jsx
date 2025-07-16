@@ -5,22 +5,27 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { getRelatedPosts } from './relatedPosts';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 3000}`);
+// Hardcoded for Vercel deployment; replace with your actual Vercel domain if needed
+const baseUrl = "https://moodplay-next.vercel.app";
 
 async function getGameBySlug(slug) {
   console.log('[getGameBySlug] slug:', slug);
   const url = `${baseUrl}/api/games?slug=${encodeURIComponent(slug)}`;
   console.log('[getGameBySlug] fetch URL:', url);
-  const res = await fetch(url);
-  console.log('[getGameBySlug] response status:', res.status);
-  if (!res.ok) {
-    console.log('[getGameBySlug] fetch failed');
+  try {
+    const res = await fetch(url);
+    console.log('[getGameBySlug] response status:', res.status);
+    if (!res.ok) {
+      console.log('[getGameBySlug] fetch failed');
+      return null;
+    }
+    const games = await res.json();
+    console.log('[getGameBySlug] games:', games);
+    return games && games.length > 0 ? games[0] : null;
+  } catch (err) {
+    console.error('[getGameBySlug] fetch error:', err);
     return null;
   }
-  const games = await res.json();
-  console.log('[getGameBySlug] games:', games);
-  return games && games.length > 0 ? games[0] : null;
 }
 
 export async function generateStaticParams() {
