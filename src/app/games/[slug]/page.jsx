@@ -1,11 +1,12 @@
 
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
+
 export default function GamePage({ params }) {
-  const { slug } = params;
+  const { slug } = use(params);
   const [game, setGame] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export default function GamePage({ params }) {
     async function fetchRelatedPosts() {
       if (!game || !game.mood) return;
       try {
-        const res = await fetch(`/api/games/${encodeURIComponent(game.mood)}/related-posts`);
+        const res = await fetch(`/api/related-posts/${encodeURIComponent(game.mood)}`);
         const posts = await res.json();
         setRelatedPosts(posts || []);
       } catch (err) {
