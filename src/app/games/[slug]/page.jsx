@@ -10,7 +10,7 @@ const baseUrl = "https://moodplay-next-7nrwp5ito-richard-pickups-projects.vercel
 
 async function getGameBySlug(slug) {
   console.log('[getGameBySlug] slug:', slug);
-  const url = `${baseUrl}/api/games?slug=${encodeURIComponent(slug)}`;
+  const url = `/api/games?slug=${encodeURIComponent(slug)}`;
   console.log('[getGameBySlug] fetch URL:', url);
   try {
     const res = await fetch(url);
