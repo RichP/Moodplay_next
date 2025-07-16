@@ -1,51 +1,50 @@
-export const dynamic = 'force-dynamic';
-import { notFound } from 'next/navigation';
-import Head from 'next/head';
-import Link from 'next/link';
-import { getRelatedPosts } from './relatedPosts';
-import { headers } from 'next/headers';
 
-// Hardcoded for Vercel deployment; replace with your actual Vercel domain if needed
-const baseUrl = "https://moodplay-next-7nrwp5ito-richard-pickups-projects.vercel.app";
+"use client";
+import { useEffect, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
 
-async function getGameBySlug(slug) {
-  console.log('[getGameBySlug] slug:', slug);
-  const host = headers().get('host');
-  const protocol = host && host.startsWith('localhost') ? 'http' : 'https';
-  const url = `${protocol}://${host}/api/games?slug=${encodeURIComponent(slug)}`;
-  console.log('[getGameBySlug] fetch URL:', url);
-  try {
-    const res = await fetch(url);
-    console.log('[getGameBySlug] response status:', res.status);
-    if (!res.ok) {
-      console.log('[getGameBySlug] fetch failed');
-      return null;
+export default function GamePage({ params }) {
+  const { slug } = params;
+  const [game, setGame] = useState(null);
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchGame() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/games?slug=${encodeURIComponent(slug)}`);
+        const games = await res.json();
+        setGame(games && games.length > 0 ? games[0] : null);
+      } catch (err) {
+        setGame(null);
+      }
+      setLoading(false);
     }
-    const games = await res.json();
-    console.log('[getGameBySlug] games:', games);
-    return games && games.length > 0 ? games[0] : null;
-  } catch (err) {
-    console.error('[getGameBySlug] fetch error:', err);
-    return null;
+    fetchGame();
+  }, [slug]);
+
+  useEffect(() => {
+    async function fetchRelatedPosts() {
+      if (!game || !game.mood) return;
+      try {
+        const res = await fetch(`/api/games/${encodeURIComponent(game.mood)}/related-posts`);
+        const posts = await res.json();
+        setRelatedPosts(posts || []);
+      } catch (err) {
+        setRelatedPosts([]);
+      }
+    }
+    fetchRelatedPosts();
+  }, [game]);
+
+  if (loading) {
+    return <div className="max-w-2xl mx-auto p-6 text-center">Loading...</div>;
   }
-}
-
-export async function generateStaticParams() {
-  const res = await fetch(`${baseUrl}/api/games`);
-  if (!res.ok) return [];
-  const games = await res.json();
-  return games.map(game => ({ slug: game.slug }));
-}
-
-import { use } from 'react';
-
-export default async function GamePage({ params }) {
-  const { slug } = await params;
-  const game = await getGameBySlug(slug);
-  if (!game) return notFound();
-
-  // Fetch related blog posts
-  const relatedPosts = await getRelatedPosts(game.mood);
+  if (!game) {
+    return <div className="max-w-2xl mx-auto p-6 text-center text-red-500">Game not found.</div>;
+  }
 
   return (
     <>
@@ -63,7 +62,7 @@ export default async function GamePage({ params }) {
               src={game.image}
               alt={game.name}
               className="w-full max-w-md rounded-lg border mb-6 shadow-md"
-              style={{ maxHeight: 340, objectFit: 'cover' }}
+              style={{ maxHeight: 340, objectFit: "cover" }}
             />
           )}
           <h1 className="text-3xl font-bold mb-2 text-indigo-700 text-center">{game.name}</h1>
