@@ -4,13 +4,16 @@ import { notFound } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
 import { getRelatedPosts } from './relatedPosts';
+import { headers } from 'next/headers';
 
 // Hardcoded for Vercel deployment; replace with your actual Vercel domain if needed
 const baseUrl = "https://moodplay-next-7nrwp5ito-richard-pickups-projects.vercel.app";
 
 async function getGameBySlug(slug) {
   console.log('[getGameBySlug] slug:', slug);
-  const url = `/api/games?slug=${encodeURIComponent(slug)}`;
+  const host = headers().get('host');
+  const protocol = host && host.startsWith('localhost') ? 'http' : 'https';
+  const url = `${protocol}://${host}/api/games?slug=${encodeURIComponent(slug)}`;
   console.log('[getGameBySlug] fetch URL:', url);
   try {
     const res = await fetch(url);
