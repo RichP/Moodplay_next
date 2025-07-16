@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { getRelatedPosts } from './relatedPosts';
 
 // Hardcoded for Vercel deployment; replace with your actual Vercel domain if needed
-const baseUrl = "https://moodplay-next.vercel.app";
+const baseUrl = "https://moodplay-next-7nrwp5ito-richard-pickups-projects.vercel.app";
 
 async function getGameBySlug(slug) {
   console.log('[getGameBySlug] slug:', slug);
