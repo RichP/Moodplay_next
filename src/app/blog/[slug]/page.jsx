@@ -35,18 +35,32 @@ export default function BlogPostPage({ params }) {
   return (
     <>
       <Head>
-        <title>{post.title} – MoodPlay Blog</title>
+        <title>{post.title}  MoodPlay Blog</title>
         <meta name="description" content={post.description || post.title} />
         {/* Open Graph tags */}
-        <meta property="og:title" content={`${post.title} – MoodPlay Blog`} />
+        <meta property="og:title" content={`${post.title}  MoodPlay Blog`} />
         <meta property="og:description" content={post.description || post.title} />
         <meta property="og:image" content={post.image} />
-        <meta property="og:url" content={`https://moodplay-next.vercel.app/blog/${post.slug}`} />
+        <meta property="og:url" content={`https://www.moodplay.co.uk/blog/${post.slug}`} />
         {/* Twitter tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${post.title} – MoodPlay Blog`} />
+        <meta name="twitter:title" content={`${post.title}  MoodPlay Blog`} />
         <meta name="twitter:description" content={post.description || post.title} />
         <meta name="twitter:image" content={post.image} />
+        {/* JSON-LD structured data */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": post.title,
+          "image": post.image ? [post.image] : [],
+          "author": {
+            "@type": "Person",
+            "name": "MoodPlay"
+          },
+          "datePublished": post.date,
+          "description": post.excerpt || post.title,
+          "url": `https://www.moodplay.co.uk/blog/${post.slug}`
+        }) }} />
       </Head>
       <div className="max-w-2xl mx-auto p-8 mt-8 bg-white rounded-xl shadow">
         {post.image && (
@@ -76,7 +90,7 @@ export default function BlogPostPage({ params }) {
             {post.content}
           </ReactMarkdown>
         </div>
-        <a href="/blog" className="text-indigo-500 hover:underline text-sm">← Back to Blog</a>
+        <a href="/blog" className="text-indigo-500 hover:underline text-sm"> Back to Blog</a>
       </div>
     </>
   );

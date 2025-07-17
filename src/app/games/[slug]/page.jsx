@@ -56,12 +56,26 @@ export default function GamePage({ params }) {
         <meta property="og:title" content={`${game.name} – MoodPlay`} />
         <meta property="og:description" content={game.description || `Steam game for mood: ${game.mood}`} />
         <meta property="og:image" content={game.image} />
-        <meta property="og:url" content={`https://moodplay-next.vercel.app/games/${game.slug}`} />
+        <meta property="og:url" content={`https://www.moodplay.co.uk/games/${game.slug}`} />
         {/* Twitter tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${game.name} – MoodPlay`} />
         <meta name="twitter:description" content={game.description || `Steam game for mood: ${game.mood}`} />
         <meta name="twitter:image" content={game.image} />
+        {/* JSON-LD structured data */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "VideoGame",
+          "name": game.name,
+          "image": game.image ? [game.image] : [],
+          "description": game.description || `Steam game for mood: ${game.mood}`,
+          "genre": game.mood,
+          "url": `https://www.moodplay.co.uk/games/${game.slug}`,
+          "author": {
+            "@type": "Organization",
+            "name": "MoodPlay"
+          }
+        }) }} />
       </Head>
       <main className="max-w-2xl mx-auto p-6">
         <a href="/" className="text-indigo-500 hover:underline text-sm mb-4 inline-block">← Back to games</a>
@@ -87,27 +101,17 @@ export default function GamePage({ params }) {
               <div className="text-xs text-gray-400">Added: {new Date(game.createdAt).toLocaleDateString()}</div>
             )}
           </div>
-          {game.steamUrl && (
-            <a
-              href={game.steamUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition text-lg font-semibold mt-2"
-              aria-label={`View ${game.name} on Steam`}
-            >
-              View on Steam
-            </a>
-          )}
+          <a href={game.steamUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition mt-2" aria-label={`View ${game.name} on Steam`}>
+            View on Steam
+          </a>
         </div>
-
-        {/* Related Articles Section */}
-        {relatedPosts && relatedPosts.length > 0 && (
-          <section className="related-posts mt-10">
-            <h2 className="text-xl font-bold mb-4">Related Articles</h2>
+        {relatedPosts.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold mb-4 text-center text-indigo-500">Related Blog Posts</h2>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {relatedPosts.map((post) => (
-                <li key={post.slug} className="bg-white rounded shadow p-4 flex flex-col items-center">
-                  <Link href={`/blog/${post.slug}`} className="w-full flex flex-col items-center">
+                <li key={post.slug} className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+                  <Link href={`/blog/${post.slug}`} className="w-full">
                     {post.image && (
                       <img src={post.image} alt={post.title} className="w-full h-32 object-cover rounded mb-2" />
                     )}
