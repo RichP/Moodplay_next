@@ -110,8 +110,8 @@ export default function HomePage() {
             <span aria-label={`${selectedMood} mood`}>{selectedMood}</span>" Mood
           </h2>
 
-          <div
-  className="w-full grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 min-h-[650px] transition-opacity duration-500 overflow-y-scroll"
+    <div
+  className="w-full grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 items-start transition-opacity duration-500 overflow-y-scroll"
 >
 
             {(() => {
@@ -120,10 +120,9 @@ export default function HomePage() {
                 // Render skeletons matching CardComponent layout
                 return Array.from({ length: MIN_ITEMS }).map((_, idx) => (
                   <article
-  key={`skeleton-${idx}`}
-  className="group bg-white rounded-xl shadow hover:shadow-lg transform transition duration-300 overflow-hidden flex flex-col border border-slate-200 animate-fade-in"
->
-
+                    key={`skeleton-${idx}`}
+                    className="group bg-white rounded-xl shadow hover:shadow-lg transform transition duration-300 overflow-hidden flex flex-col border border-slate-200 animate-fade-in"
+                  >
                     <div className="w-full h-48 bg-gray-200 dark:bg-gray-700" />
                     <div className="flex flex-col flex-1 p-4">
                       <div className="h-6 w-3/4 bg-gray-300 dark:bg-gray-600 rounded mb-2" />
