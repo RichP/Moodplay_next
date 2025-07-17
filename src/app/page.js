@@ -117,7 +117,7 @@ export default function HomePage() {
             {(() => {
               const MIN_ITEMS = 4;
               if (loading) {
-                // Render skeletons matching CardComponent layout
+                // Always render exactly MIN_ITEMS skeletons
                 return Array.from({ length: MIN_ITEMS }).map((_, idx) => (
                   <article
                     key={`skeleton-${idx}`}
@@ -134,31 +134,32 @@ export default function HomePage() {
                     </div>
                   </article>
                 ));
-              } else if (filteredAndSortedGames.length === 0) {
-                return (
-                  <div className="col-span-full flex items-center justify-center min-h-[200px]">
-                    <p className="text-lg text-gray-400 text-center">
-                      No games found for this mood—try another!
-                    </p>
-                  </div>
-                );
-              } else {
-                const cards = filteredAndSortedGames.map((game) => (
-                  <CardComponent key={game.id || game.slug} game={game} />
-                ));
-                // Pad with invisible placeholders if less than MIN_ITEMS
-                const placeholders = [];
-                for (let i = cards.length; i < MIN_ITEMS; i++) {
-                  placeholders.push(
-                    <div
-                      key={`placeholder-${i}`}
-                      className="h-64 w-full invisible"
-                      aria-hidden="true"
-                    />
-                  );
-                }
-                return [...cards, ...placeholders];
               }
+              if (filteredAndSortedGames.length === 0) {
+                // Always render MIN_ITEMS invisible placeholders for empty state
+                return Array.from({ length: MIN_ITEMS }).map((_, idx) => (
+                  <div
+                    key={`placeholder-${idx}`}
+                    className="h-64 w-full invisible"
+                    aria-hidden="true"
+                  />
+                ));
+              }
+              // Always render cards, padded to MIN_ITEMS with invisible placeholders
+              const cards = filteredAndSortedGames.map((game) => (
+                <CardComponent key={game.id || game.slug} game={game} />
+              ));
+              const placeholders = [];
+              for (let i = cards.length; i < MIN_ITEMS; i++) {
+                placeholders.push(
+                  <div
+                    key={`placeholder-${i}`}
+                    className="h-64 w-full invisible"
+                    aria-hidden="true"
+                  />
+                );
+              }
+              return [...cards, ...placeholders];
             })()}
           </div>
         </section>
