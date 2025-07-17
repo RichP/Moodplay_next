@@ -46,6 +46,7 @@ export default function CardComponent({ game, onOpenModal, expanded }) {
         className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         priority={expanded}
         sizes="(max-width: 768px) 100vw, 400px"
+        style={{ width: "auto", height: "auto" }}
       />
       <div className="flex flex-col flex-1 p-4">
         <h2 className="text-lg font-semibold mb-1 text-indigo-500">{game.name}</h2>
