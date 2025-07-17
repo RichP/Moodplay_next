@@ -138,7 +138,14 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    setEditingBlogIdx(null);
+                            <Image
+                              src={game.image}
+                              alt={game.name}
+                              width={128}
+                              height={80}
+                              className="w-32 h-20 object-cover rounded"
+                              sizes="128px"
+                            />
     setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
     fetchBlogPosts();
   };
@@ -408,7 +415,14 @@ export default function AdminPage() {
               <li key={idx} className="mb-6 border-b pb-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                   {post.image && (
-                    <img src={post.image} alt={post.title} className="w-32 h-20 object-cover rounded" />
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      width={128}
+                      height={80}
+                      className="w-32 h-20 object-cover rounded"
+                      sizes="128px"
+                    />
                   )}
                   <div className="flex-1">
                     <div className="font-semibold text-indigo-700 text-lg">{post.title}</div>

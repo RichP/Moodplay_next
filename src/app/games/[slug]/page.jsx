@@ -52,8 +52,16 @@ export default function GamePage({ params }) {
       <Head>
         <title>{game.name} – MoodPlay</title>
         <meta name="description" content={game.description || `Steam game for mood: ${game.mood}`} />
+        {/* Open Graph tags */}
         <meta property="og:title" content={`${game.name} – MoodPlay`} />
         <meta property="og:description" content={game.description || `Steam game for mood: ${game.mood}`} />
+        <meta property="og:image" content={game.image} />
+        <meta property="og:url" content={`https://moodplay-next.vercel.app/games/${game.slug}`} />
+        {/* Twitter tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${game.name} – MoodPlay`} />
+        <meta name="twitter:description" content={game.description || `Steam game for mood: ${game.mood}`} />
+        <meta name="twitter:image" content={game.image} />
       </Head>
       <main className="max-w-2xl mx-auto p-6">
         <a href="/" className="text-indigo-500 hover:underline text-sm mb-4 inline-block">← Back to games</a>

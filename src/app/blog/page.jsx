@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function BlogPage() {
@@ -18,7 +19,14 @@ export default function BlogPage() {
         {posts.map((post, idx) => (
           <article key={idx} className="border-b pb-6">
             {post.image && (
-              <img src={post.image} alt={post.title} className="w-full h-48 object-cover rounded mb-3" />
+              <Image
+                src={post.image}
+                alt={post.title}
+                width={800}
+                height={320}
+                className="w-full h-48 object-cover rounded mb-3"
+                sizes="(max-width: 768px) 100vw, 800px"
+              />
             )}
             <h2 className="text-2xl font-semibold text-indigo-700 mb-1">{post.title}</h2>
             <div className="text-xs text-gray-400 mb-2">{new Date(post.date).toLocaleDateString()}</div>

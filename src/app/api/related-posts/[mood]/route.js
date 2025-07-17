@@ -30,7 +30,11 @@ export async function GET(request, { params }) {
         blogTags: { include: { blogTag: true } },
       },
     });
-    return Response.json(posts);
+    return Response.json(posts, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+      },
+    });
   } catch (err) {
     return Response.json({ error: err.message || 'Unknown error' }, { status: 500 });
   }

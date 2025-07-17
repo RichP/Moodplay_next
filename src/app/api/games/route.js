@@ -27,7 +27,11 @@ export async function GET(request) {
       where.slug = slug;
     }
     const games = await prisma.game.findMany({ where });
-    return Response.json(games);
+    return Response.json(games, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+      },
+    });
   } catch (err) {
     return Response.json({ error: err.message || 'Unknown error' }, { status: 500 });
   }

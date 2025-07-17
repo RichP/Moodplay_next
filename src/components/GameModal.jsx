@@ -82,11 +82,13 @@ export default function GameModal({ open, game, onClose }) {
         >
           {game.name || "Game"}
         </h3>
-        <img
+        <Image
           src={imageSrc}
           alt={game.name || "Game image"}
-          loading="lazy"
+          width={800}
+          height={320}
           className="w-full h-40 sm:h-64 object-cover rounded mb-4"
+          sizes="(max-width: 768px) 100vw, 800px"
         />
         {game.description && (
           <p id="game-modal-desc" className="text-gray-700 mb-4">{game.description}</p>

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from 'next/navigation';
+import Image from "next/image";
 
 export default function CardComponent({ game, onOpenModal, expanded }) {
   const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
@@ -37,11 +38,14 @@ export default function CardComponent({ game, onOpenModal, expanded }) {
       key={game.id}
       className="group bg-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transform transition duration-300 overflow-hidden flex flex-col border border-slate-200"
     >
-      <img
+      <Image
         src={game.image}
         alt={game.name}
-        loading="lazy"
+        width={400}
+        height={192}
         className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+        priority={expanded}
+        sizes="(max-width: 768px) 100vw, 400px"
       />
       <div className="flex flex-col flex-1 p-4">
         <h2 className="text-lg font-semibold mb-1 text-indigo-500">{game.name}</h2>

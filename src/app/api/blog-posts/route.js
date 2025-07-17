@@ -15,7 +15,11 @@ export async function GET() {
     },
   },
   });
-  return NextResponse.json(posts);
+  return NextResponse.json(posts, {
+    headers: {
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+    },
+  });
 }
 
 // POST /api/blog-posts - create a new blog post

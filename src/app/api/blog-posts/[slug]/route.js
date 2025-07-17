@@ -19,7 +19,11 @@ export async function GET(req, { params }) {
   if (!post) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  return NextResponse.json(post);
+  return NextResponse.json(post, {
+    headers: {
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+    },
+  });
 }
 
 // PATCH /api/blog-posts/[slug] - update a blog post by slug
