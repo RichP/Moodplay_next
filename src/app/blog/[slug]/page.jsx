@@ -76,7 +76,8 @@ export default async function BlogPostPage({ params }) {
         "image": post.image ? [post.image] : [],
         "author": {
           "@type": "Person",
-          "name": "MoodPlay"
+          "name": "MoodPlay",
+          "url": "https://www.moodplay.co.uk/about"
         },
         "datePublished": post.date,
         "description": post.excerpt || post.title,
