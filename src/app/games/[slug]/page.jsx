@@ -82,9 +82,9 @@ export default async function GamePage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}
       />
-      <main className="max-w-2xl mx-auto p-6">
+      <main className="max-w-4xl mx-auto p-8">
         <a href="/" className="text-indigo-500 hover:underline text-sm mb-4 inline-block">← Back to games</a>
-        <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col items-center">
+  <div className="bg-white rounded-2xl shadow-2xl p-10 pr-8 flex flex-col items-center w-full max-w-3xl mx-auto">
           {game.image && (
             <Image
               src={game.image}
@@ -99,7 +99,7 @@ export default async function GamePage({ params }) {
           <h1 className="text-3xl font-bold mb-2 text-indigo-700 text-center">{game.name}</h1>
           <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold mb-4">Mood: {game.mood}</span>
           {game.description && (
-            <div className="mb-4 text-gray-700 text-center text-lg border-l-4 border-indigo-200 pl-4">{game.description}</div>
+            <div className="mb-4 text-gray-700 text-left text-base border-l-4 border-indigo-200 pl-4 pr-6 leading-relaxed">{game.description}</div>
           )}
           <div className="flex flex-col items-center gap-2 mb-4">
             {game.popularity !== undefined && (
@@ -109,7 +109,7 @@ export default async function GamePage({ params }) {
               <div className="text-xs text-gray-400">Added: {new Date(game.createdAt).toLocaleDateString()}</div>
             )}
           </div>
-          <a href={game.steamUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition mt-2" aria-label={`View ${game.name} on Steam`}>
+          <a href={game.steamUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition mt-2 mb-6" aria-label={`View ${game.name} on Steam`}>
             View on Steam
           </a>
         </div>

@@ -45,6 +45,23 @@ export async function POST(request) {
     const existingGames = await prisma.game.findMany({
       where: { steamUrl: { in: steamUrls } }
     });
+    const existingUrlsMap = new Map(existingGames.map(g => [g.steamUrl, g]));
+    let updatedCount = 0;
+    // Update descriptions for existing games if needed
+    for (const game of body) {
+      const existing = existingUrlsMap.get(game.steamUrl);
+      if (
+        existing &&
+        (!existing.description || existing.description.trim() === "") &&
+        game.description && game.description.trim() !== ""
+      ) {
+        await prisma.game.update({
+          where: { id: existing.id },
+          data: { description: game.description }
+        });
+        updatedCount++;
+      }
+    }
     const existingUrlsSet = new Set(existingGames.map(g => g.steamUrl));
     const newGames = body.filter(game => game.steamUrl && !existingUrlsSet.has(game.steamUrl)).map(game => ({
       ...game,
@@ -53,7 +70,7 @@ export async function POST(request) {
     if (newGames.length > 0) {
       await prisma.game.createMany({ data: newGames });
     }
-    return Response.json({ success: true, added: newGames.length, skipped: body.length - newGames.length });
+    return Response.json({ success: true, added: newGames.length, updated: updatedCount, skipped: body.length - newGames.length });
   } else {
     // Single upload: check if game exists by steamUrl
     if (!body.steamUrl) {
@@ -61,6 +78,14 @@ export async function POST(request) {
     }
     const exists = await prisma.game.findUnique({ where: { steamUrl: body.steamUrl } });
     if (exists) {
+      // If existing description is empty and new description is not empty, update it
+      if ((!exists.description || exists.description.trim() === "") && body.description && body.description.trim() !== "") {
+        await prisma.game.update({
+          where: { id: exists.id },
+          data: { description: body.description }
+        });
+        return Response.json({ success: true, updated: true, message: 'Description updated for existing game' }, { status: 200 });
+      }
       return Response.json({ success: false, error: 'Game already exists' }, { status: 409 });
     }
     const newGame = await prisma.game.create({ data: { ...body, slug: body.slug || slugify(body.name) } });

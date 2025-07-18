@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from 'react';
 
+
+
 export default function AdminPage() {
   // State for accepting a suggestion
   const [acceptingSuggestion, setAcceptingSuggestion] = useState(null);
@@ -599,12 +601,13 @@ export default function AdminPage() {
                     <span className="font-semibold">{game.name}</span>
                     {editingId === game.id ? (
                       <>
-                        <input
+                        <textarea
                           name="description"
                           value={editForm.description}
                           onChange={handleEditChange}
                           placeholder="Description"
                           className="border p-1 mx-2"
+                          rows={3}
                         />
                         <select
                           name="mood"
@@ -621,7 +624,9 @@ export default function AdminPage() {
                       </>
                     ) : (
                       <>
-                        <span className="mx-2 text-gray-600">{game.description}</span>
+                        <span className="mx-2 text-gray-600">
+                          {game.description ? game.description.split(' ').slice(0, 8).join(' ') + (game.description.split(' ').length > 8 ? '...' : '') : ''}
+                        </span>
                         <span className="mx-2 text-indigo-500">({game.mood})</span>
                       </>
                     )}
