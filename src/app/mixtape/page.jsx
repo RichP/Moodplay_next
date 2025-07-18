@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import GameCard from '../../components/GameCard';
 import Head from 'next/head';
 
@@ -53,7 +53,7 @@ export default function MixtapePage() {
   }, [idsParam]);
 
   return (
-    <>
+    <Suspense fallback={<div className="text-indigo-500 text-lg font-semibold animate-pulse">Loading mixtape...</div>}>
       <Head>
         <title>{title} | Moodplay</title>
         <meta name="description" content="Check out this custom Mood Mixtape shared on Moodplay! Discover new games by mood." />
@@ -89,6 +89,6 @@ export default function MixtapePage() {
           </div>
         )}
       </div>
-    </>
+    </Suspense>
   );
 }
