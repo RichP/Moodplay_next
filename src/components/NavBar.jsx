@@ -11,7 +11,13 @@ export default function NavBar() {
       aria-label="Main Navigation"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-        <span className="text-2xl font-bold text-indigo-800">MoodPlay</span>
+        <Link
+          href="/"
+          className="text-2xl font-bold text-indigo-800 focus:outline focus:outline-2 focus:outline-indigo-800"
+          onClick={() => setMenuOpen(false)}
+        >
+          MoodPlay
+        </Link>
         {/* Hamburger button (visible on mobile) */}
         <button
           className="md:hidden text-indigo-800 focus:outline focus:outline-2 focus:outline-indigo-800"

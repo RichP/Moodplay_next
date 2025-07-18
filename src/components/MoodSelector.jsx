@@ -14,11 +14,12 @@ export default function MoodSelector({ moods, selectedMood, setSelectedMood }) {
         {moods.map((moodObj) => (
           <button
             key={moodObj.id}
-            className={`text-sm px-4 py-1.5 rounded-full border font-medium shadow-sm transition duration-200 whitespace-nowrap
+            className={`w-auto max-w-xs text-sm px-6 py-1.5 rounded-full border font-medium shadow-sm transition duration-200 whitespace-nowrap
       ${selectedMood === moodObj.mood
                 ? 'bg-indigo-500 text-white border-indigo-500 scale-105'
                 : 'bg-gray-100 text-indigo-500 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400 hover:shadow-md'
               }`}
+            style={{ minWidth: 'fit-content' }}
             onClick={() => setSelectedMood(moodObj.mood)}
           >
             {moodObj.mood}

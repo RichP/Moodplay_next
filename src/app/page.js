@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-// ...existing code...
 
 import { Fragment } from 'react';
 
@@ -267,20 +266,46 @@ export default function HomePage() {
                   </>
                 )}
               </div>
-              <div className="flex justify-between mt-6 relative z-10">
+              <div className="flex flex-col gap-4 mt-6 relative z-10">
+                <div className="flex justify-between w-full">
+                  <button
+                    className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-200 transition"
+                    onClick={shuffleMixtape}
+                    disabled={likedGames.length < 2}
+                    aria-label="Shuffle mixtape"
+                  >
+                    🔀 Shuffle
+                  </button>
+                  <button
+                    className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition"
+                    onClick={clearMixtape}
+                  >
+                    🗑️ Clear
+                  </button>
+                </div>
                 <button
-                  className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-200 transition"
-                  onClick={shuffleMixtape}
-                  disabled={likedGames.length < 2}
-                  aria-label="Shuffle mixtape"
+                  className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition w-full"
+                  onClick={() => {
+                    const mixtapeGames = likedGames.map(g => g.name).join(', ');
+                    const mixtapeIds = likedGames.map(g => g.id).join(',');
+                    const domain = window.location.origin;
+                    const mixtapeUrl = `${domain}/mixtape?ids=${mixtapeIds}`;
+                    const shareText = `My ${selectedMood} Mood Mixtape: ${mixtapeGames}\n${mixtapeUrl}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'MoodPlay Mixtape',
+                        text: shareText,
+                        url: mixtapeUrl
+                      });
+                    } else {
+                      navigator.clipboard.writeText(shareText);
+                      alert('Mixtape link copied to clipboard!');
+                    }
+                  }}
+                  aria-label="Share mixtape"
+                  disabled={likedGames.length === 0}
                 >
-                  🔀 Shuffle
-                </button>
-                <button
-                  className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition"
-                  onClick={clearMixtape}
-                >
-                  🗑️ Clear
+                  📤 Share Mixtape
                 </button>
               </div>
             </motion.div>
@@ -318,9 +343,11 @@ export default function HomePage() {
                 {currentGame.image && (
                   <img
                     src={currentGame.image}
-                    alt={currentGame.name}
-                    className="w-full max-w-md rounded-lg border mb-6 shadow-md"
-                    style={{ maxHeight: 340, objectFit: "cover" }}
+                    alt={currentGame.name + ' cover'}
+                    className="w-full max-w-md rounded-lg border mb-6 shadow-md transition-transform duration-200 hover:scale-105"
+                    style={{ maxHeight: 340, objectFit: "cover", objectPosition: "center" }}
+                    loading="lazy"
+                    onError={e => { e.target.onerror = null; e.target.src = '/android-chrome-192x192.png'; }}
                   />
                 )}
                 <h1 className="text-3xl font-bold mb-2 text-indigo-700 text-center">{currentGame.name}</h1>
@@ -374,7 +401,4 @@ export default function HomePage() {
       </main>
     </>
   );
-// ...existing code...
 }
-
-// ...existing code...

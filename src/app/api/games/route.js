@@ -19,6 +19,7 @@ export async function GET(request) {
     const { searchParams } = new URL(url);
     const selectedMood = searchParams.get('selectedMood');
     const slug = searchParams.get('slug');
+    const idsParam = searchParams.get('ids');
     let where = {};
     if (selectedMood) {
       where.mood = selectedMood;
@@ -26,10 +27,22 @@ export async function GET(request) {
     if (slug) {
       where.slug = slug;
     }
+    if (idsParam) {
+      // Sanitize ids: parse, filter, deduplicate, limit to 20
+      const ids = idsParam
+        .split(',')
+        .map(id => parseInt(id, 10))
+        .filter(n => !isNaN(n))
+        .filter((n, i, arr) => arr.indexOf(n) === i)
+        .slice(0, 20);
+      if (ids.length > 0) {
+        where.id = { in: ids };
+      }
+    }
     const games = await prisma.game.findMany({ where });
     return Response.json(games, {
       headers: {
-  'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60',
+        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60',
       },
     });
   } catch (err) {
