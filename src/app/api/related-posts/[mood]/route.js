@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-export async function GET(request, { params }) {
+export async function GET(request, context) {
+  const params = await context.params;
   const { mood } = params;
   try {
     // Find mood and its tags

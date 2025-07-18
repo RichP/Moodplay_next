@@ -82,9 +82,9 @@ export default async function GamePage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}
       />
-      <main className="max-w-4xl mx-auto p-8">
+  <main className="w-full p-8">
         <a href="/" className="text-indigo-500 hover:underline text-sm mb-4 inline-block">← Back to games</a>
-  <div className="bg-white rounded-2xl shadow-2xl p-10 pr-8 flex flex-col items-center w-full max-w-3xl mx-auto">
+  <div className="bg-white rounded-2xl shadow-2xl p-10 pr-8 flex flex-col items-center w-full">
           {game.image && (
             <Image
               src={game.image}
@@ -108,7 +108,7 @@ export default async function GamePage({ params }) {
             {game.createdAt && (
               <div className="text-xs text-gray-400">Added: {new Date(game.createdAt).toLocaleDateString()}</div>
             )}
-          </div>
+            </div>
           <a href={game.steamUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition mt-2 mb-6" aria-label={`View ${game.name} on Steam`}>
             View on Steam
           </a>

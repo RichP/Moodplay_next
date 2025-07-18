@@ -47,12 +47,7 @@ export default function HomePage() {
 
   // Fetch games for selected mood
   useEffect(() => {
-    setLoading(true);
-    // Reset session on mood change
-    setDislikedIds([]);
-    setLikedIds([]);
-    localStorage.removeItem('moodplay_liked');
-    localStorage.removeItem('moodplay_disliked');
+  setLoading(true);
     const fetchGames = async () => {
       try {
         const res = await fetch(`/api/games?selectedMood=${encodeURIComponent(selectedMood)}`);
@@ -220,7 +215,7 @@ export default function HomePage() {
               >
                 &times;
               </button>
-              <h2 className="text-2xl font-bold text-center mb-4">🎧 Your Mood Mixtape</h2>
+              <h2 className="text-2xl font-bold text-center mb-4">🎧 Your {selectedMood} Mood Mixtape</h2>
               {/* Cassette SVG/emoji background */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none select-none" style={{ zIndex: 0 }}>
                 {/* SVG cassette tape */}
@@ -351,7 +346,7 @@ export default function HomePage() {
                     More Info
                   </button>
                 </div>
-                <div className="flex gap-4 mt-6">
+                <div className="flex w-full justify-between mt-6">
                   <button onClick={dislike} className="bg-red-100 text-red-600 px-4 py-2 rounded-full text-xl shadow hover:bg-red-200">❌</button>
                   <button onClick={like} className="bg-pink-100 text-pink-600 px-4 py-2 rounded-full text-xl shadow hover:bg-pink-200">❤️</button>
                 </div>
