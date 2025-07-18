@@ -35,6 +35,7 @@ export default function AdminPage() {
   const handleAcceptFormSubmit = async (e) => {
     e.preventDefault();
     await fetch('/api/games', {
+      cache: "no-store",
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(acceptForm),
@@ -82,7 +83,7 @@ export default function AdminPage() {
   const [blogPosts, setBlogPosts] = useState([]);
   // Fetch blog posts from API
   const fetchBlogPosts = async () => {
-    const res = await fetch('/api/blog-posts');
+  const res = await fetch('/api/blog-posts', { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       setBlogPosts(data);
@@ -110,6 +111,7 @@ export default function AdminPage() {
       : [];
     const payload = { ...blogForm, tags: tagsArr };
     await fetch('/api/blog-posts', {
+      cache: "no-store",
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -169,14 +171,22 @@ export default function AdminPage() {
 
   // Fetch moods from API
   const fetchMoods = async () => {
-  const res = await fetch('/api/moods');
-  const data = await res.json();
-  setMoods(data);
+  const res = await fetch('/api/moods', { cache: "no-store" });
+    if (!res.ok) {
+      setMoods([]);
+      return;
+    }
+    try {
+      const data = await res.json();
+      setMoods(data);
+    } catch (err) {
+      setMoods([]);
+    }
   };
 
   // Fetch games from API
   const fetchGames = async () => {
-    const res = await fetch('/api/games');
+  const res = await fetch('/api/games', { cache: "no-store" });
     const data = await res.json();
     setGames(data);
   };
@@ -195,7 +205,7 @@ export default function AdminPage() {
 
   // Fetch suggested games from API
   const fetchSuggestedGames = async () => {
-    const res = await fetch('/api/suggested-games');
+  const res = await fetch('/api/suggested-games', { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       setSuggestedGames(data);
@@ -280,6 +290,7 @@ export default function AdminPage() {
   const handleAddGame = async (e) => {
     e.preventDefault();
     const res = await fetch('/api/games', {
+      cache: "no-store",
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -325,6 +336,7 @@ export default function AdminPage() {
       const gamesArray = JSON.parse(text);
       if (!Array.isArray(gamesArray)) throw new Error('JSON must be an array of games');
       const res = await fetch('/api/games', {
+        cache: "no-store",
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gamesArray),

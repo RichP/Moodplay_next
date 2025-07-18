@@ -29,7 +29,7 @@ export async function GET(request) {
     const games = await prisma.game.findMany({ where });
     return Response.json(games, {
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+  'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60',
       },
     });
   } catch (err) {

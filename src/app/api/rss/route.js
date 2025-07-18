@@ -33,7 +33,7 @@ export async function GET() {
   return new NextResponse(rss, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600',
+  'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60',
     },
   });
 }
