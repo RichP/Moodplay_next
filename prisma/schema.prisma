@@ -1,3 +1,12 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model BlogPost {
   id        Int        @id @default(autoincrement())
   title     String
@@ -8,16 +17,13 @@ model BlogPost {
   content   String
   createdAt DateTime   @default(now())
   blogTags      BlogPostToBlogTag[]
-
   @@map("blogpost")
-  
 }
 
 model Mood {
   id    Int      @id @default(autoincrement())
   mood  String
   tags  Tag[]
-
   @@map("mood")
 }
 
@@ -26,7 +32,6 @@ model Tag {
   value     String
   moodId    Int
   mood      Mood     @relation(fields: [moodId], references: [id])
-
   @@map("tag")
 }
 
@@ -34,37 +39,17 @@ model BlogTag {
   id        Int         @id @default(autoincrement())
   value     String      @unique
   blogPosts BlogPostToBlogTag[]
-
   @@map("blogtag")
 }
 
 model BlogPostToBlogTag {
   A        Int
   B        Int
-
   blogPost BlogPost @relation(fields: [A], references: [id])
   blogTag  BlogTag  @relation(fields: [B], references: [id])
-
   @@id([A, B])
   @@map("_blogposttoblogtag")
 }
-
-
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 
 model Game {
   id          Int      @id @default(autoincrement())
@@ -76,7 +61,6 @@ model Game {
   steamUrl    String?
   popularity  Int      @default(0)
   createdAt   DateTime @default(now())
-
   @@map("game")
 }
 
@@ -86,6 +70,15 @@ model SuggestedGame {
   mood      String
   reason    String
   createdAt DateTime @default(now())
-
   @@map("suggestedgame")
+}
+
+model feedback {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @map("createdat") @default(now())
+
+  @@map("feedback")
 }

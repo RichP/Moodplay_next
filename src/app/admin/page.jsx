@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-
+import Image from 'next/image';
 
 
 export default function AdminPage() {
@@ -77,8 +77,12 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ description: '', mood: '' });
 
   // State: dashboard tab
-  const [activeTab, setActiveTab] = useState('moods'); // 'moods', 'games', 'suggested', 'blogs'
+  const [activeTab, setActiveTab] = useState('moods'); // 'moods', 'games', 'suggested', 'blogs', 'feedback'
 
+  // Feedback state
+  const [feedback, setFeedback] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  
   // Blog posts (from API)
   const [blogPosts, setBlogPosts] = useState([]);
   // Fetch blog posts from API
@@ -90,11 +94,54 @@ export default function AdminPage() {
     }
   };
 
+  // Fetch feedback data
+  const fetchFeedback = async () => {
+    setLoadingFeedback(true);
+    try {
+      const res = await fetch('/api/feedback', { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setFeedback(data);
+      } else {
+        setFeedback([]);
+      }
+    } catch (err) {
+      console.error('Error fetching feedback:', err);
+      setFeedback([]);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+  
+  // Delete feedback item
+  const handleDeleteFeedback = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this feedback?")) return;
+    
+    try {
+      const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        // Remove from state without refetching
+        setFeedback(prev => prev.filter(item => item.id !== id));
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to delete feedback:', errorData);
+        alert(`Failed to delete feedback: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Error deleting feedback:', err);
+      alert(`Error deleting feedback: ${err.message || 'Unknown error'}`);
+    }
+  };
+
   useEffect(() => {
     if (authenticated) {
       fetchBlogPosts();
+      // Load feedback data when tab changes
+      if (activeTab === 'feedback') {
+        fetchFeedback();
+      }
     }
-  }, [authenticated]);
+  }, [authenticated, activeTab]);
   const [blogForm, setBlogForm] = useState({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
   const [editingBlogIdx, setEditingBlogIdx] = useState(null);
   // Blog handlers
@@ -403,8 +450,15 @@ export default function AdminPage() {
         >
           Blogs
         </button>
+        <button
+          className={`px-4 py-2 rounded ${activeTab === 'feedback' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+          onClick={() => setActiveTab('feedback')}
+        >
+          Feedback
+        </button>
       
       </div>
+
       {/* Blogs Tab */}
       {activeTab === 'blogs' && (
         <div className="mb-10">
@@ -565,6 +619,41 @@ export default function AdminPage() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Feedback Tab */}
+      {activeTab === 'feedback' && (
+        <div className="mb-10">
+          <h3 className="text-lg font-semibold mb-2">User Feedback</h3>
+          {loadingFeedback ? (
+            <div className="flex justify-center p-4">
+              <div className="text-indigo-500">Loading feedback...</div>
+            </div>
+          ) : feedback.length === 0 ? (
+            <div className="text-gray-500 p-4 text-center">No feedback submissions yet.</div>
+          ) : (
+            <ul className="space-y-4">
+              {feedback.map((item) => (
+                <li key={item.id} className="bg-white rounded-lg shadow border p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-semibold text-indigo-700">{item.name}</div>
+                    <button
+                      onClick={() => handleDeleteFeedback(item.id)}
+                      className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">Email: {item.email}</div>
+                  <div className="text-gray-700 whitespace-pre-line">{item.message}</div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    {new Date(item.createdAt).toLocaleString()}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

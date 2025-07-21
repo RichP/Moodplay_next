@@ -108,7 +108,7 @@ export default function HomePage() {
     }, 1200); // loader duration
   };
   // Get liked games from all games
-  const likedGames = games.filter(g => likedIds.includes(g.id));
+  const likedGames = Array.isArray(games) ? games.filter(g => likedIds.includes(g.id)) : [];
   // Ensure mixtapeIdx stays in bounds
   useEffect(() => {
     if (likedGames.length === 0) {
