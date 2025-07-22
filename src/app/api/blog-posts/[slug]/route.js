@@ -95,12 +95,25 @@ export async function PATCH(req, { params }) {
       }
     }
 
+    // Handle date validation
+    let dateValue;
+    if (data.date) {
+      dateValue = new Date(data.date);
+      // If date is invalid, use current date
+      if (isNaN(dateValue.getTime())) {
+        dateValue = new Date();
+      }
+    } else {
+      // If no date provided, use existing date from post or current date
+      dateValue = existingPost.date || new Date();
+    }
+
     // Update other blog post fields
     return tx.blogPost.update({
       where: { slug },
       data: {
         title: data.title,
-        date: data.date ? new Date(data.date) : undefined,
+        date: dateValue,
         excerpt: data.excerpt,
         image: data.image,
         content: data.content,

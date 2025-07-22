@@ -46,16 +46,32 @@ export default function HomePage() {
 
   // Fetch games for selected mood
   useEffect(() => {
-  setLoading(true);
+    setLoading(true);
     const fetchGames = async () => {
       try {
         const res = await fetch(`/api/games?selectedMood=${encodeURIComponent(selectedMood)}`);
+        
+        if (!res.ok) {
+          console.error(`Error fetching games: ${res.status}`);
+          setGames([]);
+          return;
+        }
+        
         const data = await res.json();
-        setGames(data);
+        
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          setGames(data);
+        } else {
+          console.error("API returned non-array data:", data);
+          setGames([]);
+        }
       } catch (err) {
+        console.error("Error fetching games:", err);
         setGames([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchGames();
   }, [selectedMood]);
@@ -70,7 +86,7 @@ export default function HomePage() {
 
   // Pick a random game excluding disliked
   useEffect(() => {
-    if (!games || games.length === 0) {
+    if (!games || !Array.isArray(games) || games.length === 0) {
       setCurrentGame(null);
       setRelatedPosts([]);
       return;
@@ -149,7 +165,11 @@ export default function HomePage() {
     nextRandom();
   };
   const nextRandom = () => {
-    const available = games.filter(g => !dislikedIds.includes(g.id) && g.id !== currentGame.id);
+    if (!games || !Array.isArray(games) || games.length === 0) {
+      setCurrentGame(null);
+      return;
+    }
+    const available = games.filter(g => !dislikedIds.includes(g.id) && g.id !== (currentGame?.id));
     if (available.length === 0) {
       setCurrentGame(null);
       return;

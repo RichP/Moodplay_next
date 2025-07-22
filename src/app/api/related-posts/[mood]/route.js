@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '../../../../lib/prisma'; // Use the centralized Prisma client
 
 export async function GET(request, context) {
   const params = await context.params;

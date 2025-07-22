@@ -152,19 +152,52 @@ export default function AdminPage() {
   const handleAddBlog = async (e) => {
     e.preventDefault();
     if (!blogForm.title || !blogForm.slug) return;
+    
+    // Ensure the date is valid - use current date if not provided or invalid
+    let formattedDate = blogForm.date;
+    if (!formattedDate || isNaN(new Date(formattedDate).getTime())) {
+      formattedDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+    
     // Split tags by comma, trim whitespace, filter out empty
     const tagsArr = blogForm.tags
       ? blogForm.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
-    const payload = { ...blogForm, tags: tagsArr };
-    await fetch('/api/blog-posts', {
-      cache: "no-store",
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-    fetchBlogPosts();
+    
+    // Create a clean payload with only the necessary fields
+    const payload = {
+      title: blogForm.title.trim(),
+      slug: blogForm.slug.trim(),
+      date: formattedDate,
+      excerpt: blogForm.excerpt || '',
+      image: blogForm.image || '',
+      content: blogForm.content || '',
+      tags: tagsArr
+    };
+    
+    console.log('Submitting blog post:', payload);
+    
+    try {
+      const response = await fetch('/api/blog-posts', {
+        cache: "no-store",
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to create blog post:', errorData);
+        alert(`Failed to create blog post: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
+      fetchBlogPosts();
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      alert(`Error creating blog post: ${error.message || 'Unknown error'}`);
+    }
   };
   const startEditBlog = (idx) => {
     setEditingBlogIdx(idx);
@@ -180,25 +213,41 @@ export default function AdminPage() {
   };
   const saveEditBlog = async (idx) => {
     const post = blogPosts[idx];
+    
+    // Ensure the date is valid - use current date if not provided or invalid
+    let formattedDate = blogForm.date;
+    if (!formattedDate || isNaN(new Date(formattedDate).getTime())) {
+      formattedDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+    
     const tagsArr = blogForm.tags
       ? blogForm.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
-    const payload = { ...blogForm, tags: tagsArr };
-    await fetch(`/api/blog-posts/${post.slug}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-                            <Image
-                              src={game.image}
-                              alt={game.name}
-                              width={128}
-                              height={80}
-                              className="w-32 h-20 object-cover rounded"
-                              sizes="128px"
-                            />
-    setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-    fetchBlogPosts();
+      
+    const payload = { ...blogForm, date: formattedDate, tags: tagsArr };
+    console.log('Updating blog post:', payload);
+    
+    try {
+      const response = await fetch(`/api/blog-posts/${post.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to update blog post:', errorData);
+        alert('Failed to update blog post. Please check the form data.');
+        return;
+      }
+      
+      setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
+      setEditingBlogIdx(null);
+      fetchBlogPosts();
+    } catch (error) {
+      console.error('Error updating blog post:', error);
+      alert('An error occurred while updating the blog post.');
+    }
   };
   const cancelEditBlog = () => {
     setEditingBlogIdx(null);
@@ -466,7 +515,16 @@ export default function AdminPage() {
           <form onSubmit={editingBlogIdx !== null ? (e) => { e.preventDefault(); saveEditBlog(editingBlogIdx); } : handleAddBlog} className="mb-6 space-y-2">
             <input name="title" value={blogForm.title} onChange={handleBlogFormChange} placeholder="Title" className="border p-2 w-full" required />
             <input name="slug" value={blogForm.slug} onChange={handleBlogFormChange} placeholder="Slug (unique, e.g. my-post)" className="border p-2 w-full" required />
-            <input name="date" type="date" value={blogForm.date} onChange={handleBlogFormChange} className="border p-2 w-full" />
+            <input 
+              name="date" 
+              type="date" 
+              value={blogForm.date} 
+              onChange={handleBlogFormChange} 
+              className="border p-2 w-full" 
+              placeholder="YYYY-MM-DD" 
+              pattern="\d{4}-\d{2}-\d{2}"
+              title="Enter a date in the format YYYY-MM-DD"
+            />
             <input name="image" value={blogForm.image} onChange={handleBlogFormChange} placeholder="Image URL" className="border p-2 w-full" />
             <input name="excerpt" value={blogForm.excerpt} onChange={handleBlogFormChange} placeholder="Excerpt" className="border p-2 w-full" />
             <textarea name="content" value={blogForm.content} onChange={handleBlogFormChange} placeholder="Content" className="border p-2 w-full" rows={4} />
