@@ -418,8 +418,21 @@ export default function AdminPage() {
 
   // Delete game
   const handleDeleteGame = async (id) => {
-    await fetch(`/api/games/${id}`, { method: 'DELETE' });
-    fetchGames();
+    try {
+      const response = await fetch(`/api/games/${id}`, { method: 'DELETE' });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to delete game:', errorData);
+        alert(`Failed to delete game: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      fetchGames();
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      alert(`Error deleting game: ${error.message || 'Unknown error'}`);
+    }
   };
 
   // Bulk upload handler
