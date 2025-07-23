@@ -1,823 +1,239 @@
 "use client";
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useEffect } from 'react';
+
+// Components
+import TabNavigation from '@/components/admin/TabNavigation';
+import LoginForm from '@/components/admin/LoginForm';
+import BlogsTab from '@/components/admin/BlogsTab';
+import SuggestedGamesTab from '@/components/admin/SuggestedGamesTab';
+import MoodsTagsTab from '@/components/admin/MoodsTagsTab';
+import FeedbackTab from '@/components/admin/FeedbackTab';
+import GamesTab from '@/components/admin/GamesTab';
+
+// Custom Hooks
+import { useAuth } from '@/hooks/useAuth';
+import { useTabs } from '@/hooks/useTabs';
+import { useGames } from '@/hooks/useGames';
+import { useMoodsAndTags } from '@/hooks/useMoodsAndTags';
+import { useBlogs } from '@/hooks/useBlogs';
+import { useFeedback } from '@/hooks/useFeedback';
+import { useSuggestedGames } from '@/hooks/useSuggestedGames';
 
 
 export default function AdminPage() {
-  // State for accepting a suggestion
-  const [acceptingSuggestion, setAcceptingSuggestion] = useState(null);
-  const [acceptForm, setAcceptForm] = useState({ name: '', mood: '', description: '', image: '', steamUrl: '', popularity: 0 });
-  // Discard suggested game
-  const handleDiscardSuggestion = async (id) => {
-    await fetch(`/api/suggested-games/${id}`, { method: 'DELETE' });
-    fetchSuggestedGames();
-  };
-
-  // Accept suggested game (open form)
-  const handleAcceptSuggestion = (sg) => {
-    setAcceptingSuggestion(sg.id);
-    setAcceptForm({
-      name: sg.name,
-      mood: sg.mood,
-      description: '',
-      image: '',
-      steamUrl: '',
-      popularity: 0,
-    });
-  };
-
-  // Handle accept form change
-  const handleAcceptFormChange = (e) => {
-    setAcceptForm({ ...acceptForm, [e.target.name]: e.target.value });
-  };
-
-  // Submit accept form to create game
-  const handleAcceptFormSubmit = async (e) => {
-    e.preventDefault();
-    await fetch('/api/games', {
-      cache: "no-store",
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(acceptForm),
-    });
-    setAcceptingSuggestion(null);
-    fetchGames();
-    // Optionally discard suggestion after accepting
-    await fetch(`/api/suggested-games/${acceptingSuggestion}`, { method: 'DELETE' });
-    fetchSuggestedGames();
-  };
-
-  const handleCancelAccept = () => {
-    setAcceptingSuggestion(null);
-  };
-  // State: all moods for dropdown
-  // (no need for allTags for games dropdown)
-  // State for adding a new tag
-  const [newTagValue, setNewTagValue] = useState('');
-  const [addingTagMoodId, setAddingTagMoodId] = useState(null);
-
-  // State: moods/tags
-  const [moods, setMoods] = useState([]);
-  const [moodEditId, setMoodEditId] = useState(null);
-  const [moodEditValue, setMoodEditValue] = useState('');
-  const [tagEditId, setTagEditId] = useState(null);
-  const [tagEditValue, setTagEditValue] = useState('');
-
-  // State: authentication
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  // State: games
-  const [games, setGames] = useState([]);
-  const [filter, setFilter] = useState('');
-  const [form, setForm] = useState({ name: '', mood: '', image: '', steamUrl: '', popularity: 0 });
-  const [bulkUploadError, setBulkUploadError] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({ description: '', mood: '' });
-
-  // State: dashboard tab
-  const [activeTab, setActiveTab] = useState('moods'); // 'moods', 'games', 'suggested', 'blogs', 'feedback'
-
-  // Feedback state
-  const [feedback, setFeedback] = useState([]);
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  // Use custom hooks for state management
+  const { 
+    authenticated, 
+    password, 
+    error: authError, 
+    setPassword, 
+    handleLogin 
+  } = useAuth();
   
-  // Blog posts (from API)
-  const [blogPosts, setBlogPosts] = useState([]);
-  // Fetch blog posts from API
-  const fetchBlogPosts = async () => {
-  const res = await fetch('/api/blog-posts', { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      setBlogPosts(data);
-    }
-  };
-
-  // Fetch feedback data
-  const fetchFeedback = async () => {
-    setLoadingFeedback(true);
-    try {
-      const res = await fetch('/api/feedback', { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setFeedback(data);
-      } else {
-        setFeedback([]);
-      }
-    } catch (err) {
-      console.error('Error fetching feedback:', err);
-      setFeedback([]);
-    } finally {
-      setLoadingFeedback(false);
-    }
-  };
+  const { 
+    activeTab, 
+    setActiveTab, 
+    tabs 
+  } = useTabs('moods');
   
-  // Delete feedback item
-  const handleDeleteFeedback = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this feedback?")) return;
-    
-    try {
-      const res = await fetch(`/api/feedback/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        // Remove from state without refetching
-        setFeedback(prev => prev.filter(item => item.id !== id));
-      } else {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Failed to delete feedback:', errorData);
-        alert(`Failed to delete feedback: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('Error deleting feedback:', err);
-      alert(`Error deleting feedback: ${err.message || 'Unknown error'}`);
-    }
-  };
+  const { 
+    games, 
+    form, 
+    filter, 
+    editingId, 
+    editForm, 
+    bulkUploadError, 
+    fetchGames, 
+    handleChange, 
+    handleAddGame, 
+    startEdit, 
+    handleEditChange, 
+    saveEdit, 
+    cancelEdit, 
+    handleDeleteGame, 
+    handleBulkUpload, 
+    setFilter 
+  } = useGames();
+  
+  const { 
+    moods, 
+    moodEditId, 
+    moodEditValue, 
+    tagEditId, 
+    tagEditValue, 
+    newTagValue, 
+    addingTagMoodId, 
+    fetchMoods, 
+    startMoodEdit, 
+    saveMoodEdit, 
+    deleteMood, 
+    cancelMoodEdit, 
+    startTagEdit, 
+    saveTagEdit, 
+    deleteTag, 
+    cancelTagEdit, 
+    startAddTag, 
+    saveNewTag, 
+    cancelAddTag, 
+    setMoodEditValue, 
+    setTagEditValue, 
+    setNewTagValue, 
+    getMoodOptions 
+  } = useMoodsAndTags();
+  
+  const { 
+    blogPosts, 
+    fetchBlogPosts 
+  } = useBlogs();
+  
+  const { 
+    feedback, 
+    loading: loadingFeedback, 
+    fetchFeedback, 
+    handleDeleteFeedback 
+  } = useFeedback();
+  
+  const { 
+    suggestedGames, 
+    acceptingSuggestion, 
+    acceptForm, 
+    fetchSuggestedGames, 
+    handleDiscardSuggestion, 
+    handleAcceptSuggestion, 
+    handleAcceptFormChange, 
+    handleAcceptFormSubmit, 
+    handleCancelAccept 
+  } = useSuggestedGames();
 
+  // Load data when authenticated and tab changes
   useEffect(() => {
     if (authenticated) {
-      fetchBlogPosts();
-      // Load feedback data when tab changes
-      if (activeTab === 'feedback') {
+      // Load initial data
+      fetchGames();
+      fetchMoods();
+      fetchSuggestedGames();
+      
+      // Load data specific to active tab
+      if (activeTab === 'blogs') {
+        fetchBlogPosts();
+      } else if (activeTab === 'feedback') {
         fetchFeedback();
       }
     }
   }, [authenticated, activeTab]);
-  const [blogForm, setBlogForm] = useState({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-  const [editingBlogIdx, setEditingBlogIdx] = useState(null);
-  // Blog handlers
-  const handleBlogFormChange = (e) => {
-    setBlogForm({ ...blogForm, [e.target.name]: e.target.value });
-  };
-  // Blog CRUD handlers (API)
-  const handleAddBlog = async (e) => {
-    e.preventDefault();
-    if (!blogForm.title || !blogForm.slug) return;
-    
-    // Ensure the date is valid - use current date if not provided or invalid
-    let formattedDate = blogForm.date;
-    if (!formattedDate || isNaN(new Date(formattedDate).getTime())) {
-      formattedDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    }
-    
-    // Split tags by comma, trim whitespace, filter out empty
-    const tagsArr = blogForm.tags
-      ? blogForm.tags.split(',').map(t => t.trim()).filter(Boolean)
-      : [];
-    
-    // Create a clean payload with only the necessary fields
-    const payload = {
-      title: blogForm.title.trim(),
-      slug: blogForm.slug.trim(),
-      date: formattedDate,
-      excerpt: blogForm.excerpt || '',
-      image: blogForm.image || '',
-      content: blogForm.content || '',
-      tags: tagsArr
-    };
-    
-    console.log('Submitting blog post:', payload);
-    
-    try {
-      const response = await fetch('/api/blog-posts', {
-        cache: "no-store",
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to create blog post:', errorData);
-        alert(`Failed to create blog post: ${errorData.error || 'Unknown error'}`);
-        return;
-      }
-      
-      setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-      fetchBlogPosts();
-    } catch (error) {
-      console.error('Error creating blog post:', error);
-      alert(`Error creating blog post: ${error.message || 'Unknown error'}`);
-    }
-  };
-  const startEditBlog = (idx) => {
-    setEditingBlogIdx(idx);
-    // Convert tags array to comma string for editing
-    console.log('[startEditBlog] blogPosts:', blogPosts[idx]);
-    setBlogForm({
-      ...blogPosts[idx],
-      date: blogPosts[idx].date?.slice(0, 10),
-      tags: blogPosts[idx].blogTags
-  ? blogPosts[idx].blogTags.map(t => t.blogTag.value).join(", ")
-  : "",
-    });
-  };
-  const saveEditBlog = async (idx) => {
-    const post = blogPosts[idx];
-    
-    // Ensure the date is valid - use current date if not provided or invalid
-    let formattedDate = blogForm.date;
-    if (!formattedDate || isNaN(new Date(formattedDate).getTime())) {
-      formattedDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    }
-    
-    const tagsArr = blogForm.tags
-      ? blogForm.tags.split(',').map(t => t.trim()).filter(Boolean)
-      : [];
-      
-    const payload = { ...blogForm, date: formattedDate, tags: tagsArr };
-    console.log('Updating blog post:', payload);
-    
-    try {
-      const response = await fetch(`/api/blog-posts/${post.slug}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to update blog post:', errorData);
-        alert('Failed to update blog post. Please check the form data.');
-        return;
-      }
-      
-      setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-      setEditingBlogIdx(null);
-      fetchBlogPosts();
-    } catch (error) {
-      console.error('Error updating blog post:', error);
-      alert('An error occurred while updating the blog post.');
-    }
-  };
-  const cancelEditBlog = () => {
-    setEditingBlogIdx(null);
-    setBlogForm({ title: '', date: '', excerpt: '', image: '', slug: '', content: '', tags: '' });
-  };
-  const deleteBlog = async (idx) => {
-    const post = blogPosts[idx];
-    await fetch(`/api/blog-posts/${post.slug}`, { method: 'DELETE' });
-    fetchBlogPosts();
-  };
-
-  // State: suggested games
-  const [suggestedGames, setSuggestedGames] = useState([]);
-
-  // Demo password (replace in production)
-  const ADMIN_PASSWORD = 'admin123';
-
-  // Fetch moods from API
-  const fetchMoods = async () => {
-  const res = await fetch('/api/moods', { cache: "no-store" });
-    if (!res.ok) {
-      setMoods([]);
-      return;
-    }
-    try {
-      const data = await res.json();
-      setMoods(data);
-    } catch (err) {
-      setMoods([]);
-    }
-  };
-
-  // Fetch games from API
-  const fetchGames = async () => {
-  const res = await fetch('/api/games', { cache: "no-store" });
-    const data = await res.json();
-    setGames(data);
-  };
-
-  // On login, fetch games and suggested games
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-      fetchGames();
-      fetchSuggestedGames();
-    } else {
-      setError('Incorrect password');
-    }
-  };
-
-  // Fetch suggested games from API
-  const fetchSuggestedGames = async () => {
-  const res = await fetch('/api/suggested-games', { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      setSuggestedGames(data);
-    } else {
-      setSuggestedGames([]);
-    }
-  };
-
-  // Fetch moods and suggested games when authenticated
-  useEffect(() => {
-    if (authenticated) {
-      fetchMoods();
-      fetchSuggestedGames();
-    }
-  }, [authenticated]);
-
-  // Moods edit handlers
-  const startMoodEdit = (mood) => {
-    setMoodEditId(mood.id);
-    setMoodEditValue(mood.mood);
-  };
-  const saveMoodEdit = async (id) => {
-    await fetch(`/api/moods/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mood: moodEditValue }),
-    });
-    setMoodEditId(null);
-    fetchMoods();
-  };
-  const deleteMood = async (id) => {
-    await fetch(`/api/moods/${id}`, { method: 'DELETE' });
-    fetchMoods();
-  };
-  const cancelMoodEdit = () => setMoodEditId(null);
-
-  // Tags edit handlers
-  const startTagEdit = (tag) => {
-    setTagEditId(tag.id);
-    setTagEditValue(tag.value);
-  };
-  const saveTagEdit = async (id) => {
-    await fetch(`/api/tags/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value: tagEditValue }),
-    });
-    setTagEditId(null);
-    fetchMoods();
-  };
-  const deleteTag = async (id) => {
-    await fetch(`/api/tags/${id}`, { method: 'DELETE' });
-    fetchMoods();
-  };
-  const cancelTagEdit = () => setTagEditId(null);
-
-  // Add new tag handler
-  const startAddTag = (moodId) => {
-    setAddingTagMoodId(moodId);
-    setNewTagValue('');
-  };
-  const saveNewTag = async (moodId) => {
-    if (!newTagValue.trim()) return;
-    await fetch(`/api/tags`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value: newTagValue, moodId }),
-    });
-    setNewTagValue('');
-    setAddingTagMoodId(null);
-    fetchMoods();
-  };
-  const cancelAddTag = () => {
-    setNewTagValue('');
-    setAddingTagMoodId(null);
-  };
-
-  // Game form handlers
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-  const handleAddGame = async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/games', {
-      cache: "no-store",
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      setForm({ name: '', mood: '', image: '', steamUrl: '', popularity: 0 });
-      fetchGames();
-    }
-  };
-
-  // Game edit handlers
-  const startEdit = (game) => {
-    setEditingId(game.id);
-    setEditForm({ description: game.description || '', mood: game.mood || '' });
-  };
-  const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-  const saveEdit = async (id) => {
-    await fetch(`/api/games/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm),
-    });
-    setEditingId(null);
-    fetchGames();
-  };
-  const cancelEdit = () => setEditingId(null);
-
-  // Delete game
-  const handleDeleteGame = async (id) => {
-    try {
-      const response = await fetch(`/api/games/${id}`, { method: 'DELETE' });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Failed to delete game:', errorData);
-        alert(`Failed to delete game: ${errorData.error || 'Unknown error'}`);
-        return;
-      }
-      
-      fetchGames();
-    } catch (error) {
-      console.error('Error deleting game:', error);
-      alert(`Error deleting game: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  // Bulk upload handler
-  const handleBulkUpload = async (e) => {
-    setBulkUploadError('');
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const gamesArray = JSON.parse(text);
-      if (!Array.isArray(gamesArray)) throw new Error('JSON must be an array of games');
-      const res = await fetch('/api/games', {
-        cache: "no-store",
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gamesArray),
-      });
-      if (res.ok) {
-        fetchGames();
-      } else {
-        setBulkUploadError('Upload failed');
-      }
-    } catch (err) {
-      setBulkUploadError('Invalid JSON file');
-    }
+  
+  // Handle acceptance of suggested game
+  const handleSuggestionAccept = (e) => {
+    handleAcceptFormSubmit(e, fetchGames);
   };
 
   // Render login if not authenticated
   if (!authenticated) {
     return (
-      <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded shadow">
-        <h2 className="text-xl font-bold mb-4">Admin Login</h2>
-        <form onSubmit={handleLogin}>
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter admin password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="border p-2 w-full mb-2"
-          />
-          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded w-full">Login</button>
-        </form>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
-      </div>
+      <LoginForm
+        password={password}
+        error={authError}
+        setPassword={setPassword}
+        handleLogin={handleLogin}
+      />
     );
   }
 
-  // Render dashboard with tabs
-  const moodOptions = moods.map(mood => ({ id: mood.id, value: mood.mood }));
+  // Get mood options for dropdowns
+  const moodOptions = getMoodOptions();
+  
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
-      {/* Tabs */}
-  <div className="flex flex-row gap-4 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'moods' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setActiveTab('moods')}
-        >
-          Moods & Tags
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'games' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setActiveTab('games')}
-        >
-          Games
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'suggested' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setActiveTab('suggested')}
-        >
-          Suggested Games
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'blogs' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setActiveTab('blogs')}
-        >
-          Blogs
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'feedback' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setActiveTab('feedback')}
-        >
-          Feedback
-        </button>
       
-      </div>
+      {/* Tab Navigation */}
+      <TabNavigation 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        tabs={tabs}
+      />
 
       {/* Blogs Tab */}
       {activeTab === 'blogs' && (
-        <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-2">Blog Posts</h3>
-          <form onSubmit={editingBlogIdx !== null ? (e) => { e.preventDefault(); saveEditBlog(editingBlogIdx); } : handleAddBlog} className="mb-6 space-y-2">
-            <input name="title" value={blogForm.title} onChange={handleBlogFormChange} placeholder="Title" className="border p-2 w-full" required />
-            <input name="slug" value={blogForm.slug} onChange={handleBlogFormChange} placeholder="Slug (unique, e.g. my-post)" className="border p-2 w-full" required />
-            <input 
-              name="date" 
-              type="date" 
-              value={blogForm.date} 
-              onChange={handleBlogFormChange} 
-              className="border p-2 w-full" 
-              placeholder="YYYY-MM-DD" 
-              pattern="\d{4}-\d{2}-\d{2}"
-              title="Enter a date in the format YYYY-MM-DD"
-            />
-            <input name="image" value={blogForm.image} onChange={handleBlogFormChange} placeholder="Image URL" className="border p-2 w-full" />
-            <input name="excerpt" value={blogForm.excerpt} onChange={handleBlogFormChange} placeholder="Excerpt" className="border p-2 w-full" />
-            <textarea name="content" value={blogForm.content} onChange={handleBlogFormChange} placeholder="Content" className="border p-2 w-full" rows={4} />
-            <input name="tags" value={blogForm.tags} onChange={handleBlogFormChange} placeholder="Tags (comma separated)" className="border p-2 w-full" />
-            <div className="flex gap-2">
-              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">{editingBlogIdx !== null ? 'Save' : 'Add Blog'}</button>
-              {editingBlogIdx !== null && (
-                <button type="button" onClick={cancelEditBlog} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
-              )}
-            </div>
-          </form>
-          <ul>
-            {blogPosts.map((post, idx) => (
-              <li key={idx} className="mb-6 border-b pb-4">
-                <div className="flex flex-col sm:flex-row gap-4 items-start">
-                  {post.image && (
-                    <Image
-                      src={post.image}
-                      alt={post.title}
-                      width={128}
-                      height={80}
-                      className="w-32 h-20 object-cover rounded"
-                      sizes="128px"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <div className="font-semibold text-indigo-700 text-lg">{post.title}</div>
-                    <div className="text-xs text-gray-400 mb-1">{post.date}</div>
-                    <div className="text-gray-700 mb-1">{post.excerpt}</div>
-                    <div className="text-xs text-gray-400 mb-1">Slug: {post.slug}</div>
-                    <div className="flex gap-2 mt-1">
-                      <button onClick={() => startEditBlog(idx)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">Edit</button>
-                      <button onClick={() => deleteBlog(idx)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Delete</button>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <BlogsTab 
+          blogPosts={blogPosts} 
+          fetchBlogPosts={fetchBlogPosts} 
+        />
       )}
+
       {/* Suggested Games Tab */}
       {activeTab === 'suggested' && (
-        <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-2">Suggested Games</h3>
-          {suggestedGames.length === 0 ? (
-            <div className="text-gray-500">No suggestions yet.</div>
-          ) : (
-            <ul>
-              {suggestedGames.map(sg => (
-                <li key={sg.id} className="mb-4 border-b pb-2">
-                  <div className="font-semibold text-indigo-600">{sg.name}</div>
-                  <div className="text-gray-700">Mood: <span className="font-medium">{sg.mood}</span></div>
-                  <div className="mt-1 text-gray-600 italic">Reason: {sg.reason}</div>
-                  <div className="text-xs text-gray-400 mt-1">Suggested on {new Date(sg.createdAt).toLocaleString()}</div>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => handleDiscardSuggestion(sg.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">Discard</button>
-                    <button onClick={() => handleAcceptSuggestion(sg)} className="bg-green-500 text-white px-2 py-1 rounded text-xs">Accept</button>
-                  </div>
-                  {/* Accept form for this suggestion */}
-                  {acceptingSuggestion === sg.id && (
-                    <form onSubmit={handleAcceptFormSubmit} className="mt-4 p-4 bg-gray-50 rounded border flex flex-col gap-2">
-                      <h4 className="font-semibold mb-2">Create Game from Suggestion</h4>
-                      <input name="name" value={acceptForm.name} onChange={handleAcceptFormChange} placeholder="Game Name" className="border p-2" required />
-                      <select name="mood" value={acceptForm.mood} onChange={handleAcceptFormChange} className="border p-2" required>
-                        <option value="" disabled>Select mood</option>
-                        {moodOptions.map(opt => (
-                          <option key={opt.id} value={opt.value}>{opt.value}</option>
-                        ))}
-                      </select>
-                      <input name="description" value={acceptForm.description} onChange={handleAcceptFormChange} placeholder="Description" className="border p-2" />
-                      <input name="image" value={acceptForm.image} onChange={handleAcceptFormChange} placeholder="Image URL" className="border p-2" />
-                      <input name="steamUrl" value={acceptForm.steamUrl} onChange={handleAcceptFormChange} placeholder="Steam URL" className="border p-2" />
-                      <input name="popularity" type="number" value={acceptForm.popularity} onChange={handleAcceptFormChange} placeholder="Popularity" className="border p-2" />
-                      <div className="flex gap-2 mt-2">
-                        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Create Game</button>
-                        <button type="button" onClick={handleCancelAccept} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
-                      </div>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SuggestedGamesTab 
+          suggestedGames={suggestedGames} 
+          moodOptions={moodOptions} 
+          acceptingSuggestion={acceptingSuggestion}
+          acceptForm={acceptForm}
+          handleDiscardSuggestion={handleDiscardSuggestion}
+          handleAcceptSuggestion={handleAcceptSuggestion}
+          handleAcceptFormChange={handleAcceptFormChange}
+          handleAcceptFormSubmit={handleSuggestionAccept}
+          handleCancelAccept={handleCancelAccept}
+          fetchSuggestedGames={fetchSuggestedGames}
+        />
       )}
 
       {/* Moods & Tags Tab */}
       {activeTab === 'moods' && (
-        <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-2">Moods & Tags</h3>
-          <ul>
-            {moods.map(mood => (
-              <li key={mood.id} className="mb-4 border-b pb-2">
-                <div className="flex items-center gap-2">
-                  {moodEditId === mood.id ? (
-                    <>
-                      <input value={moodEditValue} onChange={e => setMoodEditValue(e.target.value)} className="border p-1" />
-                      <button onClick={() => saveMoodEdit(mood.id)} className="bg-green-500 text-white px-2 py-1 rounded">Save</button>
-                      <button onClick={cancelMoodEdit} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold text-indigo-600">{mood.mood}</span>
-                      <button onClick={() => startMoodEdit(mood)} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                      <button onClick={() => deleteMood(mood.id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                    </>
-                  )}
-                </div>
-                {/* Show tags only when editing this mood */}
-                {moodEditId === mood.id && (
-                  <div className="ml-4 mt-2">
-                    <span className="font-medium">Tags:</span>
-                    <ul className="flex flex-col gap-2 mt-1">
-                      {mood.tags.map(tag => (
-                        <li key={tag.id} className="flex items-center gap-2">
-                          {tagEditId === tag.id ? (
-                            <>
-                              <input value={tagEditValue} onChange={e => setTagEditValue(e.target.value)} className="border p-1" />
-                              <button onClick={() => saveTagEdit(tag.id)} className="bg-green-500 text-white px-1 py-0.5 rounded text-xs">Save</button>
-                              <button onClick={cancelTagEdit} className="bg-gray-400 text-white px-1 py-0.5 rounded text-xs">Cancel</button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="bg-gray-200 px-2 py-0.5 rounded text-sm">{tag.value}</span>
-                              <button onClick={() => startTagEdit(tag)} className="bg-blue-500 text-white px-1 py-0.5 rounded text-xs">Edit</button>
-                              <button onClick={() => deleteTag(tag.id)} className="bg-red-500 text-white px-1 py-0.5 rounded text-xs">Delete</button>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    {/* Add Tag Section */}
-                    {addingTagMoodId === mood.id ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        <input
-                          value={newTagValue}
-                          onChange={e => setNewTagValue(e.target.value)}
-                          className="border p-1"
-                          placeholder="New tag value"
-                        />
-                        <button onClick={() => saveNewTag(mood.id)} className="bg-green-500 text-white px-2 py-1 rounded text-xs">Add</button>
-                        <button onClick={cancelAddTag} className="bg-gray-400 text-white px-2 py-1 rounded text-xs">Cancel</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => startAddTag(mood.id)} className="bg-indigo-500 text-white px-2 py-1 rounded text-xs mt-2">+ Add Tag</button>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <MoodsTagsTab 
+          moods={moods}
+          moodEditId={moodEditId}
+          moodEditValue={moodEditValue}
+          tagEditId={tagEditId}
+          tagEditValue={tagEditValue}
+          addingTagMoodId={addingTagMoodId}
+          newTagValue={newTagValue}
+          setMoodEditValue={setMoodEditValue}
+          saveMoodEdit={saveMoodEdit}
+          cancelMoodEdit={cancelMoodEdit}
+          startMoodEdit={startMoodEdit}
+          deleteMood={deleteMood}
+          setTagEditValue={setTagEditValue}
+          saveTagEdit={saveTagEdit}
+          cancelTagEdit={cancelTagEdit}
+          startTagEdit={startTagEdit}
+          deleteTag={deleteTag}
+          setNewTagValue={setNewTagValue}
+          saveNewTag={saveNewTag}
+          cancelAddTag={cancelAddTag}
+          startAddTag={startAddTag}
+          fetchMoods={fetchMoods}
+        />
       )}
 
       {/* Feedback Tab */}
       {activeTab === 'feedback' && (
-        <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-2">User Feedback</h3>
-          {loadingFeedback ? (
-            <div className="flex justify-center p-4">
-              <div className="text-indigo-500">Loading feedback...</div>
-            </div>
-          ) : feedback.length === 0 ? (
-            <div className="text-gray-500 p-4 text-center">No feedback submissions yet.</div>
-          ) : (
-            <ul className="space-y-4">
-              {feedback.map((item) => (
-                <li key={item.id} className="bg-white rounded-lg shadow border p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-semibold text-indigo-700">{item.name}</div>
-                    <button
-                      onClick={() => handleDeleteFeedback(item.id)}
-                      className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-500 mb-2">Email: {item.email}</div>
-                  <div className="text-gray-700 whitespace-pre-line">{item.message}</div>
-                  <div className="text-xs text-gray-400 mt-2">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <FeedbackTab 
+          feedback={feedback}
+          loadingFeedback={loadingFeedback}
+          handleDeleteFeedback={handleDeleteFeedback}
+        />
       )}
 
       {/* Games Tab */}
       {activeTab === 'games' && (
-        <>
-          <form onSubmit={handleAddGame} className="mb-6 grid grid-cols-1 gap-2">
-            <input name="name" value={form.name} onChange={handleChange} placeholder="Game Name" className="border p-2" required />
-            <select name="mood" value={form.mood} onChange={handleChange} className="border p-2" required>
-              <option value="" disabled>Select mood</option>
-              {moodOptions.map(opt => (
-                <option key={opt.id} value={opt.value}>{opt.value}</option>
-              ))}
-            </select>
-            <input name="image" value={form.image} onChange={handleChange} placeholder="Image URL" className="border p-2" />
-            <input name="steamUrl" value={form.steamUrl} onChange={handleChange} placeholder="Steam URL" className="border p-2" />
-            <input name="popularity" type="number" value={form.popularity} onChange={handleChange} placeholder="Popularity" className="border p-2" />
-            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Add Game</button>
-          </form>
-          <div className="mb-6">
-            <label className="block mb-2 font-semibold">Bulk Upload Games (JSON file)</label>
-            <input type="file" accept="application/json" onChange={handleBulkUpload} className="border p-2" />
-            {bulkUploadError && <p className="text-red-500 mt-2">{bulkUploadError}</p>}
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Games List</h3>
-          <input
-            type="text"
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            placeholder="Filter games by name, mood, or description"
-            className="border p-2 mb-4 w-full"
-          />
-          <ul>
-            {games
-              .filter(game => {
-                const q = filter.toLowerCase();
-                return (
-                  game.name.toLowerCase().includes(q) ||
-                  (game.mood && game.mood.toLowerCase().includes(q)) ||
-                  (game.description && game.description.toLowerCase().includes(q))
-                );
-              })
-              .map(game => (
-                <li key={game.id} className="flex flex-col sm:flex-row justify-between items-center border-b py-2 gap-2">
-                  <div className="flex-1">
-                    <span className="font-semibold">{game.name}</span>
-                    {editingId === game.id ? (
-                      <>
-                        <textarea
-                          name="description"
-                          value={editForm.description}
-                          onChange={handleEditChange}
-                          placeholder="Description"
-                          className="border p-1 mx-2"
-                          rows={3}
-                        />
-                        <select
-                          name="mood"
-                          value={editForm.mood}
-                          onChange={handleEditChange}
-                          className="border p-1 mx-2"
-                          required
-                        >
-                          <option value="" disabled>Select mood</option>
-                          {moodOptions.map(opt => (
-                            <option key={opt.id} value={opt.value}>{opt.value}</option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <span className="mx-2 text-gray-600">
-                          {game.description ? game.description.split(' ').slice(0, 8).join(' ') + (game.description.split(' ').length > 8 ? '...' : '') : ''}
-                        </span>
-                        <span className="mx-2 text-indigo-500">({game.mood})</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {editingId === game.id ? (
-                      <>
-                        <button onClick={() => saveEdit(game.id)} className="bg-green-500 text-white px-2 py-1 rounded">Save</button>
-                        <button onClick={cancelEdit} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
-                      </>
-                    ) : (
-                      <button onClick={() => startEdit(game)} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                    )}
-                    <button onClick={() => handleDeleteGame(game.id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                  </div>
-                </li>
-              ))}
-          </ul>
-        </>
+        <GamesTab 
+          games={games}
+          form={form}
+          filter={filter}
+          editingId={editingId}
+          editForm={editForm}
+          moodOptions={moodOptions}
+          bulkUploadError={bulkUploadError}
+          handleChange={handleChange}
+          handleAddGame={handleAddGame}
+          startEdit={startEdit}
+          handleEditChange={handleEditChange}
+          saveEdit={saveEdit}
+          cancelEdit={cancelEdit}
+          handleDeleteGame={handleDeleteGame}
+          handleBulkUpload={handleBulkUpload}
+          setFilter={setFilter}
+        />
       )}
     </div>
   );
