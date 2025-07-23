@@ -23,11 +23,16 @@ import { useSuggestedGames } from '@/hooks/useSuggestedGames';
 export default function AdminPage() {
   // Use custom hooks for state management
   const { 
-    authenticated, 
+    authenticated,
+    username,
     password, 
-    error: authError, 
+    error: authError,
+    loading: authLoading,
+    setUsername,
     setPassword, 
-    handleLogin 
+    handleLogin,
+    handleLogout,
+    checkAuthStatus
   } = useAuth();
   
   const { 
@@ -105,6 +110,11 @@ export default function AdminPage() {
     handleCancelAccept 
   } = useSuggestedGames();
 
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+  
   // Load data when authenticated and tab changes
   useEffect(() => {
     if (authenticated) {
@@ -131,8 +141,11 @@ export default function AdminPage() {
   if (!authenticated) {
     return (
       <LoginForm
+        username={username}
         password={password}
         error={authError}
+        loading={authLoading}
+        setUsername={setUsername}
         setPassword={setPassword}
         handleLogin={handleLogin}
       />
@@ -144,7 +157,15 @@ export default function AdminPage() {
   
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+        <button 
+          onClick={handleLogout}
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"
+        >
+          Logout
+        </button>
+      </div>
       
       {/* Tab Navigation */}
       <TabNavigation 

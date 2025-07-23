@@ -14,9 +14,27 @@ const API_PATHS = {
   suggestedGames: `${API_BASE}/suggested-games`
 };
 
+// Get authentication token from localStorage
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  return token ? {
+    ...defaultHeaders,
+    'Authorization': `Bearer ${token}`
+  } : defaultHeaders;
+};
+
 // Generic error handler
 const handleApiError = (error, customMessage = 'Operation failed') => {
   console.error(`${customMessage}:`, error);
+  
+  // Check if error is due to unauthorized access
+  if (error.status === 401) {
+    // Clear token and redirect to login
+    localStorage.removeItem('authToken');
+    window.location.reload();
+    return { error: 'Session expired. Please login again.' };
+  }
+  
   return { error: error.message || 'Unknown error occurred' };
 };
 
@@ -39,7 +57,7 @@ export const gamesApi = {
     try {
       const res = await fetch(API_PATHS.games, {
         method: 'POST',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(game),
         cache: "no-store"
       });
@@ -60,7 +78,7 @@ export const gamesApi = {
     try {
       const res = await fetch(`${API_PATHS.games}/${id}`, {
         method: 'PATCH',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       
@@ -79,7 +97,8 @@ export const gamesApi = {
   delete: async (id) => {
     try {
       const res = await fetch(`${API_PATHS.games}/${id}`, { 
-        method: 'DELETE' 
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {
@@ -102,7 +121,7 @@ export const gamesApi = {
     try {
       const res = await fetch(API_PATHS.games, {
         method: 'POST',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(gamesArray),
         cache: "no-store"
       });
@@ -138,7 +157,7 @@ export const moodsApi = {
     try {
       const res = await fetch(`${API_PATHS.moods}/${id}`, {
         method: 'PATCH',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       
@@ -157,7 +176,8 @@ export const moodsApi = {
   delete: async (id) => {
     try {
       const res = await fetch(`${API_PATHS.moods}/${id}`, { 
-        method: 'DELETE' 
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {
@@ -179,7 +199,7 @@ export const tagsApi = {
     try {
       const res = await fetch(API_PATHS.tags, {
         method: 'POST',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(tag)
       });
       
