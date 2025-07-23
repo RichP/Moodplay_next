@@ -219,7 +219,7 @@ export const tagsApi = {
     try {
       const res = await fetch(`${API_PATHS.tags}/${id}`, {
         method: 'PATCH',
-        headers: defaultHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       

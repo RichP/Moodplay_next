@@ -3,83 +3,104 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model BlogPost {
-  id        Int        @id @default(autoincrement())
-  title     String
-  slug      String     @unique
-  date      DateTime
-  excerpt   String
+  id        Int       @id(map: "idx_17585_blogpost_pkey") @unique @default(autoincrement())
+  title     String?
+  slug      String?   @unique(map: "idx_17585_blogpost_slug_key")
+  date      DateTime? @db.Timestamptz(6)
+  excerpt   String?
   image     String?
-  content   String
-  createdAt DateTime   @default(now())
-  blogTags      BlogPostToBlogTag[]
+  content   String?
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  blogTags  BlogPostToBlogTag[]
+
   @@map("blogpost")
 }
 
 model Mood {
-  id    Int      @id @default(autoincrement())
-  mood  String
-  tags  Tag[]
+  id   Int     @id(map: "idx_17554_mood_pkey")
+  mood String?
+  tags Tag[]
+
   @@map("mood")
 }
 
 model Tag {
-  id        Int      @id @default(autoincrement())
-  value     String
-  moodId    Int
-  mood      Mood     @relation(fields: [moodId], references: [id])
+  id     Int     @id(map: "idx_17561_tag_pkey")
+  value  String?
+  moodId Int?
+  mood   Mood?   @relation(fields: [moodId], references: [id])
+
   @@map("tag")
 }
 
 model BlogTag {
-  id        Int         @id @default(autoincrement())
-  value     String      @unique
+  id    Int     @id(map: "idx_17593_blogtag_pkey")
+  value String? @unique(map: "idx_17593_blogtag_value_key")
   blogPosts BlogPostToBlogTag[]
+
   @@map("blogtag")
 }
 
 model BlogPostToBlogTag {
-  A        Int
-  B        Int
+  A Int
+  B Int
   blogPost BlogPost @relation(fields: [A], references: [id])
   blogTag  BlogTag  @relation(fields: [B], references: [id])
+
   @@id([A, B])
   @@map("_blogposttoblogtag")
 }
 
 model Game {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
+  id          Int       @id(map: "idx_17576_game_pkey")
+  name        String?
+  slug        String?   @unique(map: "idx_17576_game_slug_key")
   description String?
-  mood        String
+  mood        String?
   image       String?
   steamUrl    String?
-  popularity  Int      @default(0)
-  createdAt   DateTime @default(now())
+  popularity  Int?
+  createdAt   DateTime? @default(now()) @db.Timestamptz(6)
+
   @@map("game")
 }
 
 model SuggestedGame {
-  id        Int      @id @default(autoincrement())
-  name      String
-  mood      String
-  reason    String
-  createdAt DateTime @default(now())
+  id        Int       @id(map: "idx_17568_suggestedgame_pkey")
+  name      String?
+  mood      String?
+  reason    String?
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+
   @@map("suggestedgame")
 }
 
 model feedback {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  email     String    @db.VarChar(255)
   message   String
-  createdAt DateTime @map("createdat") @default(now())
+  createdAt DateTime? @default(now()) @map("createdat") @db.Timestamptz(6)
 
   @@map("feedback")
 }
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String?  @unique
+  password  String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user")
+}
+
+
