@@ -1,5 +1,8 @@
 // API route for games
 import prisma from '../../../lib/prisma'; // Use the centralized Prisma client
+import { authenticate } from '@/middleware/auth';
+import { NextResponse } from 'next/server';
+
 function slugify(str) {
   return str
     .toLowerCase()
@@ -77,6 +80,22 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  // Check authentication
+  const auth = await authenticate(request);
+  
+  // If not authenticated, return the error response
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  
+  // Check if user has admin role
+  if (auth.user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Unauthorized. Admin access required' },
+      { status: 403 }
+    );
+  }
+  
   const body = await request.json();
   if (Array.isArray(body)) {
     // Bulk upload: filter out games that already exist by steamUrl or name
@@ -277,5 +296,116 @@ export async function POST(request) {
       console.error('Error creating game:', error);
       return Response.json({ error: error.message || 'Failed to create game' }, { status: 500 });
     }
+  }
+}
+
+// PATCH/PUT update game endpoint
+export async function PATCH(request) {
+  // Check authentication
+  const auth = await authenticate(request);
+  
+  // If not authenticated, return the error response
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  
+  // Check if user has admin role
+  if (auth.user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Unauthorized. Admin access required' },
+      { status: 403 }
+    );
+  }
+  
+  try {
+    // Get the game ID from the query parameters
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Game ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Parse request body for update data
+    const updateData = await request.json();
+    
+    // Update the game
+    const updatedGame = await prisma.game.update({
+      where: { id: Number(id) },
+      data: {
+        ...(updateData.name && { name: updateData.name }),
+        ...(updateData.description && { description: updateData.description }),
+        ...(updateData.mood && { mood: updateData.mood }),
+        ...(updateData.image && { image: updateData.image }),
+        ...(updateData.steamUrl && { steamUrl: updateData.steamUrl }),
+        ...(updateData.popularity !== undefined && { 
+          popularity: typeof updateData.popularity === 'string' 
+            ? parseInt(updateData.popularity, 10) || 0 
+            : updateData.popularity 
+        }),
+      },
+    });
+    
+    return NextResponse.json({
+      success: true,
+      game: updatedGame
+    });
+  } catch (error) {
+    console.error('Error updating game:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to update game' },
+      { status: 500 }
+    );
+  }
+}
+
+// Alias PUT to PATCH for RESTful consistency
+export const PUT = PATCH;
+
+// DELETE game endpoint
+export async function DELETE(request) {
+  // Check authentication
+  const auth = await authenticate(request);
+  
+  // If not authenticated, return the error response
+  if (!auth.authenticated) {
+    return auth.response;
+  }
+  
+  // Check if user has admin role
+  if (auth.user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Unauthorized. Admin access required' },
+      { status: 403 }
+    );
+  }
+  
+  try {
+    // Get the game ID from the query parameters
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Game ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Delete the game
+    await prisma.game.delete({
+      where: { id: Number(id) },
+    });
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting game:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete game' },
+      { status: 500 }
+    );
   }
 }
