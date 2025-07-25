@@ -234,62 +234,37 @@ export async function POST(request) {
         ? parseInt(body.popularity, 10) || 0 
         : (typeof body.popularity === 'number' ? body.popularity : 0);
       
-      // Create the game using standard Prisma API
-      try {
-        const newGame = await prisma.game.create({
-          data: {
-            name: body.name || 'Unnamed Game',
-            slug: body.slug || slugify(body.name || 'unnamed-game'),
-            description: body.description || null,
-            mood: body.mood || 'Neutral',
-            image: body.image || null,
-            steamUrl: body.steamUrl || null,
-            popularity: popularity
-          }
-        });
+      // Skip the standard Prisma create since it's having issues with ID generation
+      // Instead, always use the raw SQL approach which works
+      console.log('Using raw SQL to create game');
         
-        console.log('Game created successfully:', newGame.id);
-        return Response.json({ success: true, game: newGame });
-      } catch (createError) {
-        console.error('Error in standard create, falling back to raw SQL:', createError);
+      // Get next ID
+      const maxIdResult = await prisma.$queryRaw`SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM game`;
+      // Convert BigInt to Number safely
+      const nextId = maxIdResult[0]?.next_id ? Number(maxIdResult[0].next_id) : 1;
+      
+      console.log('Using next ID:', nextId);
+      
+      // Insert with explicit ID
+      await prisma.$executeRaw`
+        INSERT INTO game (id, name, slug, description, mood, image, "steamUrl", popularity, "createdAt")
+        VALUES (
+          ${nextId},
+          ${body.name || 'Unnamed Game'},
+          ${body.slug || slugify(body.name || 'unnamed-game')}, 
+          ${body.description || null},
+          ${body.mood || 'Neutral'},
+          ${body.image || null},
+          ${body.steamUrl || null},
+          ${popularity},
+          now()
+        )
+      `;
         
-        // If standard create fails, try with raw SQL as fallback
-        try {
-          // Get next ID
-          const maxIdResult = await prisma.$queryRaw`SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM game`;
-          // Convert BigInt to Number safely
-          const nextId = maxIdResult[0]?.next_id ? Number(maxIdResult[0].next_id) : 1;
-          
-          // Insert with explicit ID
-          await prisma.$executeRaw`
-            INSERT INTO game (id, name, slug, description, mood, image, "steamUrl", popularity, "createdAt")
-            VALUES (
-              ${nextId},
-              ${body.name || 'Unnamed Game'},
-              ${body.slug || slugify(body.name || 'unnamed-game')}, 
-              ${body.description || null},
-              ${body.mood || 'Neutral'},
-              ${body.image || null},
-              ${body.steamUrl || null},
-              ${popularity},
-              now()
-            )
-          `;
-          
-          // Fetch the newly created game
-          const newGame = await prisma.game.findFirst({
-            where: { slug: body.slug || slugify(body.name || 'unnamed-game') }
-          });
-          
-          return Response.json({ success: true, game: newGame });
-        } catch (sqlError) {
-          console.error('SQL fallback also failed:', sqlError);
-          return Response.json({ 
-            error: 'Failed to create game through all methods', 
-            details: sqlError.message 
-          }, { status: 500 });
-        }
-      }
+      // Fetch the newly created game
+      const newGame = await prisma.game.findFirst({
+        where: { slug: body.slug || slugify(body.name || 'unnamed-game') }
+      });
       
       return Response.json({ success: true, game: newGame });
     } catch (error) {

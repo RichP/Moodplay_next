@@ -238,7 +238,8 @@ export const tagsApi = {
   delete: async (id) => {
     try {
       const res = await fetch(`${API_PATHS.tags}/${id}`, { 
-        method: 'DELETE' 
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {
@@ -286,7 +287,8 @@ export const feedbackApi = {
   delete: async (id) => {
     try {
       const res = await fetch(`${API_PATHS.feedback}/${id}`, { 
-        method: 'DELETE' 
+        method: 'DELETE',
+        headers: getAuthHeaders() 
       });
       
       if (!res.ok) {
@@ -319,7 +321,8 @@ export const suggestedGamesApi = {
   delete: async (id) => {
     try {
       const res = await fetch(`${API_PATHS.suggestedGames}/${id}`, { 
-        method: 'DELETE' 
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {

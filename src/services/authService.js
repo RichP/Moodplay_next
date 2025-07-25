@@ -33,7 +33,8 @@ export const authService = {
    * @returns {string|null} The token or null if not found
    */
   extractTokenFromHeader(headers) {
-    const authHeader = headers.authorization;
+    // Support both direct access (headers.authorization) and Next.js App Router (headers.get('Authorization'))
+    const authHeader = headers.get ? headers.get('Authorization') : headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }

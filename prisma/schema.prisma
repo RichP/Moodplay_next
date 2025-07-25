@@ -23,7 +23,7 @@ model BlogPost {
 }
 
 model Mood {
-  id   Int     @id(map: "idx_17554_mood_pkey")
+  id   Int     @id(map: "idx_17554_mood_pkey") @default(autoincrement())
   mood String?
   tags Tag[]
 
@@ -31,7 +31,7 @@ model Mood {
 }
 
 model Tag {
-  id     Int     @id(map: "idx_17561_tag_pkey")
+  id     Int     @id(map: "idx_17561_tag_pkey") @default(autoincrement())
   value  String?
   moodId Int?
   mood   Mood?   @relation(fields: [moodId], references: [id])
@@ -40,7 +40,7 @@ model Tag {
 }
 
 model BlogTag {
-  id    Int     @id(map: "idx_17593_blogtag_pkey")
+  id    Int     @id(map: "idx_17593_blogtag_pkey") @default(autoincrement())
   value String? @unique(map: "idx_17593_blogtag_value_key")
   blogPosts BlogPostToBlogTag[]
 
@@ -58,7 +58,7 @@ model BlogPostToBlogTag {
 }
 
 model Game {
-  id          Int       @id(map: "idx_17576_game_pkey")
+  id          Int       @id(map: "idx_17576_game_pkey") @default(autoincrement())
   name        String?
   slug        String?   @unique(map: "idx_17576_game_slug_key")
   description String?
@@ -72,7 +72,7 @@ model Game {
 }
 
 model SuggestedGame {
-  id        Int       @id(map: "idx_17568_suggestedgame_pkey")
+  id        Int       @id(map: "idx_17568_suggestedgame_pkey") @default(autoincrement())
   name      String?
   mood      String?
   reason    String?

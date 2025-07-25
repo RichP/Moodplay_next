@@ -1,4 +1,4 @@
-import { verifyToken } from '@/services/authService';
+import { authService } from '@/services/authService';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -16,7 +16,7 @@ export async function GET(request) {
   
   try {
     // Verify the token
-    const decoded = await verifyToken(token);
+    const decoded = authService.verifyToken(token);
     
     // Token is valid
     return NextResponse.json({ 

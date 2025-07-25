@@ -7,9 +7,12 @@ import { authService } from '@/services/authService';
  */
 export async function authenticate(request) {
   // Extract token from Authorization header
+  console.log('Auth headers:', JSON.stringify(Object.fromEntries([...request.headers])));
+  
   const token = authService.extractTokenFromHeader(request.headers);
   
   if (!token) {
+    console.log('Authentication failed: No token found');
     return {
       authenticated: false,
       response: NextResponse.json(
@@ -19,10 +22,13 @@ export async function authenticate(request) {
     };
   }
   
+  console.log('Token found, verifying...');
+  
   // Verify the token
   const payload = authService.verifyToken(token);
   
   if (!payload) {
+    console.log('Authentication failed: Invalid or expired token');
     return {
       authenticated: false,
       response: NextResponse.json(
@@ -31,6 +37,8 @@ export async function authenticate(request) {
       )
     };
   }
+  
+  console.log('Authentication successful for user:', payload.username);
   
   // Authentication successful
   return {
