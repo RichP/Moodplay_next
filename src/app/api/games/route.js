@@ -144,54 +144,50 @@ export async function POST(request) {
     const newGamesSource = body.filter(g => g.steamUrl && !existingUrlsSet.has(g.steamUrl));
     console.log(`Found ${newGamesSource.length} new games to add`);
     
-    // Process games one by one using standard Prisma API first
-    let createdCount = 0;
-    let errorCount = 0;
+    // Prepare data for createMany operation
+    const newGames = [];
     
     for (const game of newGamesSource) {
-      try {
-        // Ensure slug is unique by checking if it exists
-        let slug = game.slug || slugify(game.name || 'unnamed-game');
-        const existingBySlug = await prisma.game.findUnique({
-          where: { slug }
-        });
-        
-        if (existingBySlug) {
-          // Append a timestamp to make the slug unique
-          slug = `${slug}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        }
-        
-        // Convert popularity to integer if it's a string
-        const popularity = typeof game.popularity === 'string' 
-          ? parseInt(game.popularity, 10) || 0 
-          : (typeof game.popularity === 'number' ? game.popularity : 0);
-        
-        // Try standard Prisma create first
-        await prisma.game.create({
-          data: {
-            name: game.name || 'Unnamed Game',
-            slug: slug,
-            description: game.description || null,
-            mood: game.mood || 'Neutral',
-            image: game.image || null,
-            steamUrl: game.steamUrl || null,
-            popularity: popularity
-          }
-        });
-        
-        createdCount++;
-      } catch (error) {
-        console.error(`Error creating game ${game.name} with standard method:`, error);
-        errorCount++;
+      // Ensure slug is unique by checking if it exists
+      let slug = game.slug || slugify(game.name || 'unnamed-game');
+      const existingBySlug = await prisma.game.findUnique({
+        where: { slug }
+      });
+      
+      if (existingBySlug) {
+        // Append a timestamp to make the slug unique
+        slug = `${slug}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       }
+      
+      // Convert popularity to integer if it's a string
+      const popularity = typeof game.popularity === 'string' 
+        ? parseInt(game.popularity, 10) || 0 
+        : (typeof game.popularity === 'number' ? game.popularity : 0);
+        
+      newGames.push({
+        name: game.name || 'Unnamed Game',
+        slug: slug,
+        description: game.description || null,
+        mood: game.mood || 'Neutral',
+        image: game.image || null,
+        steamUrl: game.steamUrl || null,
+        popularity: popularity
+      });
     }
     
-    console.log(`Successfully created ${createdCount} games with ${errorCount} errors`);
-    
+    // Use createMany for better performance
+    let createdCount = 0;
     if (newGames.length > 0) {
-      await prisma.game.createMany({ data: newGames });
+      const result = await prisma.game.createMany({
+        data: newGames,
+        skipDuplicates: true
+      });
+      createdCount = result.count;
     }
-    return Response.json({ success: true, added: newGames.length, updated: updatedCount, skipped: body.length - newGames.length });
+    
+    console.log(`Successfully created ${createdCount} games`);
+    
+    return Response.json({ success: true, added: createdCount, updated: updatedCount, skipped: body.length - createdCount });
   } else {
     // Single upload: check if game exists by steamUrl
     if (!body.steamUrl) {
@@ -234,37 +230,20 @@ export async function POST(request) {
         ? parseInt(body.popularity, 10) || 0 
         : (typeof body.popularity === 'number' ? body.popularity : 0);
       
-      // Skip the standard Prisma create since it's having issues with ID generation
-      // Instead, always use the raw SQL approach which works
-      console.log('Using raw SQL to create game');
-        
-      // Get next ID
-      const maxIdResult = await prisma.$queryRaw`SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM game`;
-      // Convert BigInt to Number safely
-      const nextId = maxIdResult[0]?.next_id ? Number(maxIdResult[0].next_id) : 1;
-      
-      console.log('Using next ID:', nextId);
-      
-      // Insert with explicit ID
-      await prisma.$executeRaw`
-        INSERT INTO game (id, name, slug, description, mood, image, "steamUrl", popularity, "createdAt")
-        VALUES (
-          ${nextId},
-          ${body.name || 'Unnamed Game'},
-          ${body.slug || slugify(body.name || 'unnamed-game')}, 
-          ${body.description || null},
-          ${body.mood || 'Neutral'},
-          ${body.image || null},
-          ${body.steamUrl || null},
-          ${popularity},
-          now()
-        )
-      `;
-        
-      // Fetch the newly created game
-      const newGame = await prisma.game.findFirst({
-        where: { slug: body.slug || slugify(body.name || 'unnamed-game') }
+            // Create the game using standard Prisma API
+      const newGame = await prisma.game.create({
+        data: {
+          name: body.name || 'Unnamed Game',
+          slug: body.slug || slugify(body.name || 'unnamed-game'),
+          description: body.description || null,
+          mood: body.mood || 'Neutral',
+          image: body.image || null,
+          steamUrl: body.steamUrl || null,
+          popularity: popularity
+        }
       });
+      
+      console.log('Game created successfully:', newGame.id);
       
       return Response.json({ success: true, game: newGame });
     } catch (error) {
