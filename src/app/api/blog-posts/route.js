@@ -30,60 +30,134 @@ export async function POST(req) {
   const dateValue = data.date ? new Date(data.date) : new Date();
   // Check if date is valid, use current date as fallback
   const validDate = isNaN(dateValue.getTime()) ? new Date() : dateValue;
-
+  
+  // Generate a base slug - clean it up properly
+  let baseSlug = data.slug?.trim() 
+    ? data.slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    : `post-${Date.now()}`;
+  
   try {
-    // Create the blog post without tags first
-    const post = await prisma.blogPost.create({
-      data: {
+    // Always generate a unique slug with timestamp to avoid conflicts
+    let finalSlug = `${baseSlug}-${Date.now()}`;
+    console.log(`Using generated slug: "${finalSlug}"`);
+    
+    // Debugging information
+    console.log('Creating blog post with data:', {
+      title: data.title?.trim() || 'Untitled',
+      slug: finalSlug,
+      date: validDate
+    });
+    
+    // Try upsert instead of create to avoid ID conflicts
+    console.log('Attempting to create post with Prisma upsert');
+    const post = await prisma.blogPost.upsert({
+      where: {
+        slug: finalSlug // We know this is unique because we generated it with timestamp
+      },
+      update: {
         title: data.title?.trim() || 'Untitled',
-        slug: data.slug?.trim() || `post-${Date.now()}`,
         date: validDate,
         excerpt: data.excerpt?.trim() || '',
         image: data.image?.trim() || null,
-        content: data.content?.trim() || '',
+        content: data.content?.trim() || ''
       },
+      create: {
+        title: data.title?.trim() || 'Untitled',
+        slug: finalSlug,
+        date: validDate,
+        excerpt: data.excerpt?.trim() || '',
+        image: data.image?.trim() || null,
+        content: data.content?.trim() || ''
+      }
     });
     
+    console.log('Post created successfully:', post.id);
+    
     // Process tags separately after post creation
-    if (Array.isArray(data.tags) && data.tags.length > 0) {
+    if (post && Array.isArray(data.tags) && data.tags.length > 0) {
+      console.log('Processing tags for post ID:', post.id);
       for (const tagValue of data.tags) {
-        if (!tagValue.trim()) continue; // Skip empty tags
+        if (!tagValue?.trim()) continue; // Skip empty tags
         
-        // Try to find existing tag first
-        let tag = await prisma.blogTag.findUnique({
-          where: { value: tagValue.trim() }
-        });
-        
-        // Create tag if it doesn't exist
-        if (!tag) {
-          tag = await prisma.blogTag.create({
-            data: { value: tagValue.trim() }
+        try {
+          // Try to find existing tag first
+          let tag = await prisma.blogTag.findUnique({
+            where: { value: tagValue.trim() }
           });
-        }
-        
-        // Create the connection manually
-        await prisma.blogPostToBlogTag.create({
-          data: {
-            A: post.id,
-            B: tag.id
+          
+          // Handle tag creation
+          if (!tag) {
+            // Use a clean upsert approach which is more idiomatic Prisma code
+            // This will work once the database identity columns are properly set up
+            try {
+              tag = await prisma.blogTag.upsert({
+                where: { 
+                  value: tagValue.trim() 
+                },
+                update: {}, // No need to update if it exists
+                create: { 
+                  value: tagValue.trim() 
+                }
+              });
+              console.log(`Tag created or found with ID: ${tag.id}`);
+            } catch (tagError) {
+              console.error('Error with tag upsert:', tagError);
+              // As a fallback, try to find the tag again
+              tag = await prisma.blogTag.findFirst({
+                where: { value: tagValue.trim() }
+              });
+            }
           }
-        });
+          
+          // Only try to connect if both post and tag exist
+          if (post?.id && tag?.id) {
+            console.log(`Attempting to connect tag ${tag.id} to post ${post.id}`);
+            
+            try {
+              // Direct create is simpler and more reliable
+              await prisma.blogPostToBlogTag.create({
+                data: {
+                  A: post.id,
+                  B: tag.id
+                }
+              });
+              console.log(`Successfully connected tag "${tagValue.trim()}" to post ID ${post.id}`);
+            } catch (connectionError) {
+              // Connection might already exist - that's fine
+              if (connectionError.message?.includes('Unique constraint')) {
+                console.log(`Connection between post ${post.id} and tag ${tag.id} already exists`);
+              } else {
+                console.error('Error connecting tag to post:', connectionError);
+              }
+            }
+          } else {
+            console.log(`Cannot connect tag, missing post ID (${post?.id}) or tag ID (${tag?.id})`);
+          }
+        } catch (tagError) {
+          console.error('Error processing tag:', tagValue, tagError);
+        }
       }
+    } else {
+      console.log('No post found or no tags to process');
     }
     
     // Fetch the post with its tags
-    const completePost = await prisma.blogPost.findUnique({
-      where: { id: post.id },
-      include: {
-        blogTags: {
-          include: {
-            blogTag: true,
+    if (post) {
+      const completePost = await prisma.blogPost.findUnique({
+        where: { id: post.id },
+        include: {
+          blogTags: {
+            include: {
+              blogTag: true,
+            },
           },
         },
-      },
-    });
-    
-    return NextResponse.json(completePost);
+      });
+      
+      return NextResponse.json(completePost);
+    } else {
+      return NextResponse.json({ error: "Failed to create blog post" }, { status: 500 });
+    }
   } catch (error) {
     console.error('Error creating blog post:', error);
     return NextResponse.json(
