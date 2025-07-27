@@ -2,15 +2,31 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRY = '7d'; // Token expiry time
+const MOBILE_TOKEN_EXPIRY = '30d'; // Mobile tokens can last longer
 
 export const authService = {
   /**
-   * Generate a JWT token
+   * Generate a JWT token for admin users
    * @param {Object} payload - Data to encode in the token
    * @returns {string} JWT token
    */
   generateToken(payload) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+  },
+
+  /**
+   * Generate a JWT token for mobile apps
+   * @param {Object} payload - Data to encode in the token
+   * @returns {string} JWT token
+   */
+  generateMobileToken(payload) {
+    // Add mobile-specific claims to the token
+    const mobilePayload = {
+      ...payload,
+      tokenType: 'mobile',
+      scope: 'read-only'  // Define the permissions scope for mobile
+    };
+    return jwt.sign(mobilePayload, JWT_SECRET, { expiresIn: MOBILE_TOKEN_EXPIRY });
   },
 
   /**

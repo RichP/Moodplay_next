@@ -18,11 +18,23 @@ export async function GET(request) {
     // Verify the token
     const decoded = authService.verifyToken(token);
     
-    // Token is valid
-    return NextResponse.json({ 
-      valid: true, 
-      user: { username: decoded.username }
-    });
+    // Handle different token types
+    if (decoded.tokenType === 'mobile') {
+      // Mobile app token
+      return NextResponse.json({ 
+        valid: true, 
+        tokenType: 'mobile',
+        scope: decoded.scope,
+        clientType: decoded.clientType
+      });
+    } else {
+      // Regular user token (admin)
+      return NextResponse.json({ 
+        valid: true, 
+        tokenType: 'user',
+        user: { username: decoded.username }
+      });
+    }
   } catch (error) {
     // Token is invalid or expired
     return NextResponse.json({ 

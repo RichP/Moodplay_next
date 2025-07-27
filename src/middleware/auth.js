@@ -38,11 +38,26 @@ export async function authenticate(request) {
     };
   }
   
-  console.log('Authentication successful for user:', payload.username);
-  
-  // Authentication successful
-  return {
-    authenticated: true,
-    user: payload
-  };
+  // Handle different token types
+  if (payload.tokenType === 'mobile') {
+    console.log('Authentication successful for mobile app client');
+    
+    // Authentication successful for mobile app
+    return {
+      authenticated: true,
+      isMobileClient: true,
+      scope: payload.scope,
+      user: payload
+    };
+  } else {
+    // Regular user token (likely admin)
+    console.log('Authentication successful for user:', payload.username || 'unknown');
+    
+    // Authentication successful
+    return {
+      authenticated: true,
+      isMobileClient: false,
+      user: payload
+    };
+  }
 }
